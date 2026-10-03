@@ -38,7 +38,7 @@ export default function PricingPage() {
       {/* Hero */}
       <section style={{ padding: '140px 48px 64px', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
         <h1 className="headline-lg" style={{ marginBottom: '20px' }}>
-          Simple, honest<br />pricing.
+          Pricing built<br />around you.
         </h1>
         <p className="body-text" style={{ maxWidth: '460px', margin: '0 auto' }}>
           Try Assure free with a one time allowance. Assure+ is on the way for when you need more.
