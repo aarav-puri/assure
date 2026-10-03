@@ -761,7 +761,7 @@ export default function LandingPage() {
       <section id="pricing" className="reveal">
         <div className="eyebrow" style={{ marginBottom:'20px' }}>Pricing</div>
         <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', flexWrap:'wrap', gap:'16px', marginBottom:'48px' }}>
-          <h2 className="headline-lg">Simple, honest<br/>pricing.</h2>
+          <h2 className="headline-lg">Pricing built<br/>around you.</h2>
           <div style={{ display:'inline-flex', alignItems:'center', border:'1px solid #2a2a2a', borderRadius:'100px', padding:'6px 16px', background:'rgba(255,255,255,0.03)' }}>
             <span style={{ fontSize:'11px', fontWeight:'700', letterSpacing:'0.15em', textTransform:'uppercase', color:'#888' }}>Assure+ coming soon</span>
           </div>
