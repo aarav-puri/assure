@@ -51,7 +51,7 @@ export default function PlanCard({ plan, highlighted = false, available = true, 
       </div>
 
       <div style={{ fontSize: '12px', color: highlighted ? 'rgba(255,255,255,0.65)' : '#444', marginBottom: '28px' }}>
-        {isFree ? 'One time allowance. No card required.' : (available ? 'Billed monthly' : 'Coming soon. Not yet available to buy.')}
+        {isFree ? 'No card required.' : (available ? 'Billed monthly' : 'Coming soon. Not yet available to buy.')}
       </div>
 
       {available ? (

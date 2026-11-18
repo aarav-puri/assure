@@ -827,7 +827,7 @@ export default function AppPage() {
                         <div style={{ height:'100%', borderRadius:'2px', width:`${Math.min((claimUsed / CLAIM_LIMIT) * 100, 100)}%`, background: claimUsed >= CLAIM_LIMIT ? '#ef4444' : claimUsed >= CLAIM_LIMIT - 1 ? '#f59e0b' : '#4ade80', transition:'width 0.3s ease' }} />
                       </div>
                     </div>
-                    <div style={{ fontSize:'10px', color:'#333' }}>Free trial allowance, one time</div>
+                    <div style={{ fontSize:'10px', color:'#333' }}>Free trial allowance</div>
                   </div>
                 </div>
                 <button onClick={() => { setShowNotifModal(true); setUserMenuOpen(false); }} style={{ display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'9px 12px', background:'none', border:'none', color:'#888', fontSize:'13px', cursor:'pointer', borderRadius:'7px', transition:'all 0.15s', textAlign:'left' }} onMouseOver={e=>e.currentTarget.style.background='#161616'} onMouseOut={e=>e.currentTarget.style.background='none'}>

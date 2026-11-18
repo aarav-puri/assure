@@ -41,7 +41,7 @@ export default function PricingPage() {
           Pricing built<br />around you.
         </h1>
         <p className="body-text" style={{ maxWidth: '460px', margin: '0 auto' }}>
-          Try Assure free with a one time allowance. Assure+ is on the way for when you need more.
+          Try Assure free. Assure+ is on the way for when you need more.
         </p>
       </section>
 
