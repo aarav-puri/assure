@@ -14,7 +14,7 @@ export default function TermsPage() {
           <p>By creating an account or using Assure, you agree to these Terms. If you don't agree, please don't use the service. If you're using Assure on behalf of an organisation, you're confirming you have authority to accept these Terms for it.</p>
 
           <h2>2. Description of the service</h2>
-          <p>Assure is a record keeping tool. You enter the products you own and their warranty periods, and we store that information, show you what is still in coverage, and remind you before it runs out. We also offer AI features that read receipt images and help you think through a claim.</p>
+          <p>Assure is a record keeping tool. You enter the products you own and their warranty periods, and we store that information, show you what is still in coverage and how long it has left. We also offer AI features that read receipt images and help you think through a claim.</p>
           <p>We are not a party to any warranty between you and a manufacturer or retailer, and we do not file or pursue claims on your behalf. Whether a claim succeeds is between you and whoever issued the warranty.</p>
 
           <h2>3. Your account</h2>

@@ -118,8 +118,6 @@ export default function AppPage() {
   const [isMobileView, setIsMobileView] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  // Expiry reminders are always on; only the lead time is a preference.
-  const [notifPrefs, setNotifPrefs] = useState({ daysBefore: 30 });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('expiry-asc');
@@ -136,7 +134,6 @@ export default function AppPage() {
   const [formError, setFormError] = useState('');
   const [savingWarranty, setSavingWarranty] = useState(false);
   const [deletingWarranty, setDeletingWarranty] = useState(false);
-  const [selectedDaysBefore, setSelectedDaysBefore] = useState(30);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [statValues, setStatValues] = useState({ total:0, active:0, expiring:0, expired:0 });
@@ -293,9 +290,6 @@ export default function AppPage() {
           const { profile, usage, limits: serverLimits } = await res.json();
           if (cancelled) return;
           setUserProfile(profile);
-          const prefs = { daysBefore: profile.notificationPrefs.daysBefore || 30 };
-          setNotifPrefs(prefs);
-          setSelectedDaysBefore(prefs.daysBefore);
           setSettingsForm({ name: profile.name || data.user.name || '', password: '' });
           setScanUsed(usage.scan || 0);
           setClaimUsed(usage.claim || 0);
@@ -701,7 +695,7 @@ export default function AppPage() {
     }
   };
 
-  // ── Save settings (name + reminder timing, one request) ───────────────────
+  // ── Save settings (name) ───────────────────────────────────────────────────
   const saveSettings = async (e) => {
     e?.preventDefault();
     if (!currentUser || savingSettings) return;
@@ -710,11 +704,10 @@ export default function AppPage() {
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: settingsForm.name, notificationPrefs: { daysBefore: selectedDaysBefore } }),
+        body: JSON.stringify({ name: settingsForm.name }),
       });
       if (!res.ok) throw new Error('save failed');
       setUserProfile(prev => ({ ...prev, name: settingsForm.name }));
-      setNotifPrefs({ daysBefore: selectedDaysBefore });
       showToast('Settings saved.', 'success');
       setShowSettingsModal(false);
     } catch (err) {
@@ -974,7 +967,7 @@ export default function AppPage() {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => { setSelectedDaysBefore(notifPrefs.daysBefore || 30); setSettingsForm(p => ({ ...p, name: userProfile?.name || p.name })); setShowSettingsModal(true); setUserMenuOpen(false); }} style={{ display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'9px 12px', background:'none', border:'none', color:'#888', fontSize:'13px', cursor:'pointer', borderRadius:'7px', transition:'all 0.15s', textAlign:'left' }} onMouseOver={e=>e.currentTarget.style.background='#161616'} onMouseOut={e=>e.currentTarget.style.background='none'}>
+                <button onClick={() => { setSettingsForm(p => ({ ...p, name: userProfile?.name || p.name })); setShowSettingsModal(true); setUserMenuOpen(false); }} style={{ display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'9px 12px', background:'none', border:'none', color:'#888', fontSize:'13px', cursor:'pointer', borderRadius:'7px', transition:'all 0.15s', textAlign:'left' }} onMouseOver={e=>e.currentTarget.style.background='#161616'} onMouseOut={e=>e.currentTarget.style.background='none'}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                   Settings
                 </button>
@@ -1394,33 +1387,6 @@ export default function AppPage() {
             </section>
 
             <section className="settings-section rise" style={{ animationDelay:'120ms' }}>
-              <div className="settings-label">
-                <h2>Notifications</h2>
-              </div>
-              <div className="settings-fields">
-                <div>
-                  <span className="label">Remind me this many days before a warranty expires</span>
-                  <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
-                    {[7, 14, 30, 60, 90].map(d => (
-                      <button type="button" key={d} onClick={() => setSelectedDaysBefore(d)} className={`filter-pill tnum${selectedDaysBefore === d ? ' active' : ''}`} aria-pressed={selectedDaysBefore === d}>
-                        {d} days
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="settings-note">
-                  <span>Email reminders</span>
-                  <span className="tag">Coming soon</span>
-                </div>
-                {expiringCount > 0 && (
-                  <div className="tnum" style={{ fontSize:'14px', color:'var(--warn)' }}>
-                    {expiringCount} warrant{expiringCount === 1 ? 'y expires' : 'ies expire'} within 30 days.
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section className="settings-section rise" style={{ animationDelay:'180ms' }}>
               <div className="settings-label">
                 <h2>Plan</h2>
               </div>

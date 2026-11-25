@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             <li>Warranty details you enter, such as product names, brands, retailers, dates, prices, and serial numbers</li>
             <li>Receipt images you upload for AI scanning</li>
             <li>Messages you send to the AI claim assistant</li>
-            <li>Basic account settings, such as your notification preferences</li>
+            <li>Basic account settings, such as your name</li>
           </ul>
           <p>We never see or store your password. Sign in is handled by Neon Auth, which stores only a hashed form of it.</p>
 
@@ -25,7 +25,6 @@ export default function PrivacyPage() {
           <ul>
             <li>To create and run your account</li>
             <li>To store your warranty records and show them back to you</li>
-            <li>To remind you before your warranties expire</li>
             <li>To power AI receipt scanning and the claim assistant</li>
             <li>To keep the service working, secure, and free of abuse</li>
           </ul>
@@ -69,7 +68,6 @@ export default function PrivacyPage() {
             <li>Delete individual warranty records at any time from within the app</li>
             <li>Ask us to delete your account and everything attached to it</li>
             <li>Ask for a copy of your data</li>
-            <li>Choose how many days before expiry you are reminded</li>
           </ul>
           <p>Depending on where you live, you may have further rights under laws such as the GDPR or the CCPA, including the right to object to processing or to complain to your local data protection authority.</p>
 
