@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
+import { LogoMark } from '@/components/Logo';
+import MeshGradient from '@/components/MeshGradient';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -114,7 +116,7 @@ export default function LoginPage() {
   const inputStyle = {
     width:'100%', background:'#141414', border:'1px solid #242424', borderRadius:'10px',
     color:'#fff', padding:'13px 16px', fontSize:'14px', outline:'none',
-    transition:'border-color 0.15s', fontFamily:'Inter, sans-serif', boxSizing:'border-box'
+    transition:'border-color 0.15s', boxSizing:'border-box'
   };
 
   const SpinnerIcon = () => (
@@ -124,24 +126,23 @@ export default function LoginPage() {
   );
 
   return (
-    <div style={{ background:'#080808', color:'#fff', fontFamily:'Inter, sans-serif', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
-      {/* Background grid */}
-      <div style={{ position:'fixed', inset:'0', pointerEvents:'none', zIndex:'0', backgroundImage:'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)', backgroundSize:'60px 60px', maskImage:'radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 80%)' }}></div>
-      <div style={{ position:'fixed', top:'-30%', left:'50%', transform:'translateX(-50%)', width:'50vw', height:'50vw', borderRadius:'50%', background:'radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%)', pointerEvents:'none', zIndex:'0' }}></div>
+    <div className="app-shell" style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
+      <MeshGradient className="app-glow full" />
 
-      <div style={{ background:'#0f0f0f', border:'1px solid #1e1e1e', borderRadius:'24px', padding:'40px 36px', width:'100%', maxWidth:'420px', position:'relative', zIndex:'1', boxShadow:'0 40px 120px rgba(0,0,0,0.6)' }}>
+      <div className="corners rise" style={{ background:'#111110', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'20px', padding:'40px 36px', width:'100%', maxWidth:'420px', position:'relative', zIndex:'1', boxShadow:'0 40px 120px rgba(0,0,0,0.7)' }}>
+        <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
         {/* Logo */}
         <div style={{ textAlign:'center', marginBottom:'28px' }}>
-          <a href="/" style={{ display:'block', marginBottom:'20px' }}>
-            <img src="/favicon.png" width="48" height="48" alt="ASSURE" style={{ display: 'block', margin: '0 auto' }} />
+          <a href="/" aria-label="Assure home" style={{ display:'flex', justifyContent:'center', marginBottom:'20px', color:'#f4f3f0' }}>
+            <LogoMark size={56} />
           </a>
-          <div style={{ fontSize:'24px', fontWeight:'800', letterSpacing:'0.15em', textTransform:'uppercase', lineHeight:1, color:'#fff' }}>Assure</div>
+          <div style={{ fontSize:'28px', fontWeight:500, letterSpacing:'-0.045em', lineHeight:1, color:'#fff' }}>Assure</div>
         </div>
 
         {/* Tabs */}
         <div style={{ display:'flex', background:'#141414', border:'1px solid #1e1e1e', borderRadius:'10px', padding:'4px', marginBottom:'28px' }}>
-          {[['signin','Sign In'],['signup','Create Account']].map(([t,label]) => (
-            <button key={t} onClick={() => { setTab(t); setError(''); setSuccessMsg(''); }} style={{ flex:1, padding:'9px 4px', borderRadius:'7px', border:'none', background:tab===t?'#4361ee':'transparent', color:tab===t?'#fff':'#666', fontSize:'13px', fontWeight:700, letterSpacing:'0.04em', textTransform:'uppercase', cursor:'pointer', transition:'all 0.2s', fontFamily:'Inter, sans-serif' }}>
+          {[['signin','Sign in'],['signup','Create account']].map(([t,label]) => (
+            <button key={t} onClick={() => { setTab(t); setError(''); setSuccessMsg(''); }} style={{ flex:1, padding:'9px 4px', borderRadius:'7px', border:'none', background:tab===t?'#f2f0ec':'transparent', color:tab===t?'#0b0b0a':'#8a877f', fontSize:'13px', fontWeight:600, cursor:'pointer', transition:'all 0.2s' }}>
               {label}
             </button>
           ))}
@@ -149,14 +150,14 @@ export default function LoginPage() {
 
         {/* Success message */}
         {successMsg && (
-          <div style={{ background:'rgba(74,222,128,0.08)', border:'1px solid rgba(74,222,128,0.2)', borderRadius:'8px', padding:'10px 14px', fontSize:'13px', color:'#4ade80', marginBottom:'16px' }}>
+          <div style={{ background:'rgba(108,192,143,0.08)', border:'1px solid rgba(108,192,143,0.2)', borderRadius:'8px', padding:'10px 14px', fontSize:'13px', color:'#6cc08f', marginBottom:'16px' }}>
             {successMsg}
           </div>
         )}
 
         {/* Error message */}
         {error && (
-          <div style={{ background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:'8px', padding:'10px 14px', fontSize:'13px', color:'#ef4444', marginBottom:'16px' }}>
+          <div style={{ background:'rgba(224,105,94,0.08)', border:'1px solid rgba(224,105,94,0.2)', borderRadius:'8px', padding:'10px 14px', fontSize:'13px', color:'#e0695e', marginBottom:'16px' }}>
             {error}
           </div>
         )}
@@ -165,13 +166,13 @@ export default function LoginPage() {
         {tab === 'signin' && (
           <form onSubmit={handleSignin}>
             <div style={{ marginBottom:'16px' }}>
-              <label style={{ display:'block', fontSize:'11px', fontWeight:700, color:'#666', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'8px' }}>Email address</label>
+              <label style={{ display:'block', fontSize:'11px', fontWeight:600, color:'#666', marginBottom:'8px' }}>Email address</label>
               <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} onFocus={e => e.target.style.borderColor='#555'} onBlur={e => e.target.style.borderColor='#242424'} />
             </div>
             <div style={{ marginBottom:'8px' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px' }}>
-                <label style={{ display:'block', fontSize:'11px', fontWeight:700, color:'#666', textTransform:'uppercase', letterSpacing:'0.1em' }}>Password</label>
-                <button type="button" onClick={() => { setTab('forgot'); setError(''); setSuccessMsg(''); }} style={{ background:'none', border:'none', color:'#444', fontSize:'11px', cursor:'pointer', padding:'0', fontFamily:'Inter, sans-serif', transition:'color 0.15s', fontWeight:500 }} onMouseOver={e=>e.currentTarget.style.color='#888'} onMouseOut={e=>e.currentTarget.style.color='#444'}>
+                <label style={{ display:'block', fontSize:'11px', fontWeight:600, color:'#666' }}>Password</label>
+                <button type="button" onClick={() => { setTab('forgot'); setError(''); setSuccessMsg(''); }} style={{ background:'none', border:'none', color:'#444', fontSize:'11px', cursor:'pointer', padding:'0', transition:'color 0.15s', fontWeight:500 }} onMouseOver={e=>e.currentTarget.style.color='#888'} onMouseOut={e=>e.currentTarget.style.color='#444'}>
                   Forgot password?
                 </button>
               </div>
@@ -183,14 +184,14 @@ export default function LoginPage() {
               </div>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'20px' }}>
-              <input type="checkbox" id="rememberMe" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={{ appearance:'none', width:'16px', height:'16px', border:'1px solid #333', borderRadius:'4px', background:rememberMe ? '#4361ee' : 'transparent', borderColor:rememberMe ? '#4361ee' : '#333', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }} />
+              <input type="checkbox" id="rememberMe" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={{ appearance:'none', width:'16px', height:'16px', border:'1px solid #333', borderRadius:'4px', background:rememberMe ? '#f2f0ec' : 'transparent', borderColor:rememberMe ? '#f2f0ec' : '#333', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }} />
               <style dangerouslySetInnerHTML={{ __html: `
-                #rememberMe:checked::after { content: ''; position: absolute; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-top: -2px; }
+                #rememberMe:checked::after { content: ''; position: absolute; width: 4px; height: 8px; border: solid #0b0b0a; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-top: -2px; }
               ` }} />
               <label htmlFor="rememberMe" style={{ fontSize:'12px', color:'#888', cursor:'pointer', userSelect:'none' }}>Remember me</label>
             </div>
-            <button type="submit" disabled={loading} style={{ width:'100%', background:'#4361ee', color:'#fff', border:'none', borderRadius:'10px', padding:'14px', fontSize:'13px', fontWeight:800, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', transition:'all 0.2s', fontFamily:'Inter, sans-serif', opacity:loading?0.6:1 }}>
-              {loading ? <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}><SpinnerIcon /></div> : 'Sign In'}
+            <button type="submit" disabled={loading} style={{ width:'100%', background:'#f2f0ec', color:'#0b0b0a', border:'none', borderRadius:'10px', padding:'14px', fontSize:'13px', fontWeight:600, cursor:loading?'not-allowed':'pointer', transition:'all 0.2s', opacity:loading?0.6:1 }}>
+              {loading ? <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}><SpinnerIcon /></div> : 'Sign in'}
             </button>
           </form>
         )}
@@ -199,15 +200,15 @@ export default function LoginPage() {
         {tab === 'signup' && (
           <form onSubmit={handleSignup}>
             <div style={{ marginBottom:'14px' }}>
-              <label style={{ display:'block', fontSize:'11px', fontWeight:700, color:'#666', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'8px' }}>Full Name</label>
+              <label style={{ display:'block', fontSize:'11px', fontWeight:600, color:'#666', marginBottom:'8px' }}>Full Name</label>
               <input type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} required style={inputStyle} onFocus={e => e.target.style.borderColor='#555'} onBlur={e => e.target.style.borderColor='#242424'} />
             </div>
             <div style={{ marginBottom:'14px' }}>
-              <label style={{ display:'block', fontSize:'11px', fontWeight:700, color:'#666', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'8px' }}>Email address</label>
+              <label style={{ display:'block', fontSize:'11px', fontWeight:600, color:'#666', marginBottom:'8px' }}>Email address</label>
               <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} onFocus={e => e.target.style.borderColor='#555'} onBlur={e => e.target.style.borderColor='#242424'} />
             </div>
             <div style={{ marginBottom:'6px' }}>
-              <label style={{ display:'block', fontSize:'11px', fontWeight:700, color:'#666', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'8px' }}>Password</label>
+              <label style={{ display:'block', fontSize:'11px', fontWeight:600, color:'#666', marginBottom:'8px' }}>Password</label>
               <div style={{ position:'relative' }}>
                 <input type={showPassword?'text':'password'} placeholder="Min. 6 characters" value={password} onChange={e => { setPassword(e.target.value); checkStrength(e.target.value); }} required style={{ ...inputStyle, paddingRight:'44px' }} onFocus={e => e.target.style.borderColor='#555'} onBlur={e => e.target.style.borderColor='#242424'} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position:'absolute', right:'14px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'#555', cursor:'pointer', padding:'4px', lineHeight:0 }}>
@@ -215,14 +216,14 @@ export default function LoginPage() {
                 </button>
               </div>
               <div style={{ height:'3px', borderRadius:'2px', background:'#1a1a1a', marginTop:'6px', overflow:'hidden' }}>
-                <div style={{ height:'100%', borderRadius:'2px', transition:'all 0.3s', width:['0%','25%','50%','75%','100%'][strengthScore], background:['','#ef4444','#f59e0b','#3b82f6','#4ade80'][strengthScore] }}></div>
+                <div style={{ height:'100%', borderRadius:'2px', transition:'all 0.3s', width:['0%','25%','50%','75%','100%'][strengthScore], background:['','#e0695e','#e3ad55','#6cc08f','#6cc08f'][strengthScore] }}></div>
               </div>
-              <div style={{ fontSize:'11px', color:['','#ef4444','#f59e0b','#3b82f6','#4ade80'][strengthScore], marginTop:'4px', height:'14px' }}>
+              <div style={{ fontSize:'11px', color:['','#e0695e','#e3ad55','#6cc08f','#6cc08f'][strengthScore], marginTop:'4px', height:'14px' }}>
                 {['','Weak','Fair','Good','Strong'][strengthScore]}
               </div>
             </div>
             <div style={{ marginBottom:'20px' }}>
-              <label style={{ display:'block', fontSize:'11px', fontWeight:700, color:'#666', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'8px' }}>Confirm password</label>
+              <label style={{ display:'block', fontSize:'11px', fontWeight:600, color:'#666', marginBottom:'8px' }}>Confirm password</label>
               <input type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required style={inputStyle} onFocus={e => e.target.style.borderColor='#555'} onBlur={e => e.target.style.borderColor='#242424'} />
             </div>
             <label style={{ display:'flex', alignItems:'flex-start', gap:'10px', marginBottom:'20px', cursor:'pointer', userSelect:'none' }}>
@@ -241,11 +242,10 @@ export default function LoginPage() {
                 <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color:'#aaa', textDecoration:'underline' }} onClick={e => e.stopPropagation()}>Terms of Service</a>
                 {' '}and{' '}
                 <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color:'#aaa', textDecoration:'underline' }} onClick={e => e.stopPropagation()}>Privacy Policy</a>.
-                I am at least 18 years of age.
               </span>
             </label>
-            <button type="submit" disabled={loading || !acceptedTerms} style={{ width:'100%', background: acceptedTerms ? '#fff' : '#1a1a1a', color: acceptedTerms ? '#000' : '#444', border: acceptedTerms ? 'none' : '1px solid #2a2a2a', borderRadius:'10px', padding:'14px', fontSize:'13px', fontWeight:800, letterSpacing:'0.08em', textTransform:'uppercase', cursor:(loading || !acceptedTerms)?'not-allowed':'pointer', transition:'all 0.2s', fontFamily:'Inter, sans-serif', opacity:loading?0.6:1 }}>
-              {loading ? <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}><SpinnerIcon /></div> : 'Create Account'}
+            <button type="submit" disabled={loading || !acceptedTerms} style={{ width:'100%', background: acceptedTerms ? '#fff' : '#1a1a1a', color: acceptedTerms ? '#000' : '#444', border: acceptedTerms ? 'none' : '1px solid #2a2a2a', borderRadius:'10px', padding:'14px', fontSize:'13px', fontWeight:600, cursor:(loading || !acceptedTerms)?'not-allowed':'pointer', transition:'all 0.2s', opacity:loading?0.6:1 }}>
+              {loading ? <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}><SpinnerIcon /></div> : 'Create account'}
             </button>
           </form>
         )}
@@ -253,20 +253,20 @@ export default function LoginPage() {
         {/* ── Forgot Password ── */}
         {tab === 'forgot' && (
           <form onSubmit={handleForgotPassword}>
-            <button type="button" onClick={() => { setTab('signin'); setError(''); setSuccessMsg(''); }} style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:'none', border:'none', color:'#555', fontSize:'12px', cursor:'pointer', padding:'0', fontFamily:'Inter, sans-serif', marginBottom:'20px', transition:'color 0.15s' }} onMouseOver={e=>e.currentTarget.style.color='#888'} onMouseOut={e=>e.currentTarget.style.color='#555'}>
+            <button type="button" onClick={() => { setTab('signin'); setError(''); setSuccessMsg(''); }} style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:'none', border:'none', color:'#555', fontSize:'12px', cursor:'pointer', padding:'0', marginBottom:'20px', transition:'color 0.15s' }} onMouseOver={e=>e.currentTarget.style.color='#888'} onMouseOut={e=>e.currentTarget.style.color='#555'}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               Back to sign in
             </button>
             <div style={{ marginBottom:'6px' }}>
-              <div style={{ fontSize:'17px', fontWeight:800, letterSpacing:'-0.02em', marginBottom:'6px' }}>Reset password</div>
+              <div style={{ fontSize:'17px', fontWeight:600, letterSpacing:'-0.02em', marginBottom:'6px' }}>Reset password</div>
               <div style={{ fontSize:'13px', color:'#555', lineHeight:'1.5' }}>Enter your email and we'll send you a reset link.</div>
             </div>
             <div style={{ margin:'20px 0' }}>
-              <label style={{ display:'block', fontSize:'11px', fontWeight:700, color:'#666', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'8px' }}>Email address</label>
+              <label style={{ display:'block', fontSize:'11px', fontWeight:600, color:'#666', marginBottom:'8px' }}>Email address</label>
               <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} onFocus={e => e.target.style.borderColor='#555'} onBlur={e => e.target.style.borderColor='#242424'} />
             </div>
-            <button type="submit" disabled={loading} style={{ width:'100%', background:'#4361ee', color:'#fff', border:'none', borderRadius:'10px', padding:'14px', fontSize:'13px', fontWeight:800, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', transition:'all 0.2s', fontFamily:'Inter, sans-serif', opacity:loading?0.6:1 }}>
-              {loading ? <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}><SpinnerIcon /></div> : 'Send Reset Link'}
+            <button type="submit" disabled={loading} style={{ width:'100%', background:'#f2f0ec', color:'#0b0b0a', border:'none', borderRadius:'10px', padding:'14px', fontSize:'13px', fontWeight:600, cursor:loading?'not-allowed':'pointer', transition:'all 0.2s', opacity:loading?0.6:1 }}>
+              {loading ? <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}><SpinnerIcon /></div> : 'Send reset link'}
             </button>
           </form>
         )}

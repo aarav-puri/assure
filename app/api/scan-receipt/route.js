@@ -62,12 +62,12 @@ export async function POST(request) {
     const user = await getSessionUser();
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-    // Enforce scan limit. The free trial is a one-time allowance, so this
-    // counts every scan ever made rather than resetting each month.
+    // Enforce the scan limit for the plan's period (the Free plan resets on
+    // the 1st of each month).
     const usage = await getUsage(user.id);
     if (usage.scan >= SCAN_LIMIT) {
       return NextResponse.json(
-        { error: `You have used your free trial scan${SCAN_LIMIT === 1 ? '' : 's'} (${usage.scan}/${SCAN_LIMIT}).` },
+        { error: `You have used this month's receipt scan${SCAN_LIMIT === 1 ? '' : 's'} (${usage.scan}/${SCAN_LIMIT}). More on the 1st.` },
         { status: 429 }
       );
     }

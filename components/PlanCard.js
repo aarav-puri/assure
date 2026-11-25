@@ -1,10 +1,7 @@
 'use client';
 
-const CHECK_ICON = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
+import { TickCircle } from 'iconsax-reactjs';
+import { SpotlightCard } from '@/components/motion';
 
 /**
  * One plan tile. Used by the landing page and the pricing page, and reads
@@ -13,80 +10,54 @@ const CHECK_ICON = (
  * `available` is false for a plan nobody can buy yet; it shows a disabled
  * "Coming soon" button instead of a call to action that goes nowhere.
  */
-export default function PlanCard({ plan, highlighted = false, available = true, current = false, href = '/login', cta = 'Get started' }) {
+export default function PlanCard({ plan, available = true, current = false, href = '/login', cta = 'Get started' }) {
   const isFree = plan.key === 'free';
-  const muted = highlighted ? 'rgba(255,255,255,0.75)' : '#555';
 
   return (
-    <div style={{
-      background: highlighted ? '#4361ee' : '#0f0f0f',
-      border: `1px solid ${highlighted ? 'transparent' : '#1a1a1a'}`,
-      borderRadius: '24px',
-      padding: '32px',
+    <SpotlightCard style={{
+      background: 'var(--paper)',
+      border: '1px solid var(--line)',
+      borderRadius: 'var(--radius-lg)',
+      padding: 32,
       display: 'flex',
       flexDirection: 'column',
-      position: 'relative',
+      textAlign: 'left',
     }}>
-      {(current || !available) && (
-        <div style={{
-          position: 'absolute', top: '-13px', left: '50%', transform: 'translateX(-50%)',
-          background: current ? '#4ade80' : (highlighted ? '#f59e0b' : '#2a2a2a'),
-          color: current ? '#000' : (highlighted ? '#000' : '#888'),
-          fontSize: '10px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase',
-          padding: '4px 14px', borderRadius: '100px', whiteSpace: 'nowrap',
-        }}>
-          {current ? 'Your current plan' : 'Coming soon'}
-        </div>
-      )}
-
-      <div style={{ fontSize: '12px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: muted, marginBottom: '12px' }}>
-        {plan.name}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+        <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--ink)' }}>{plan.name}</div>
+        {(current || !available) && (
+          <span style={{
+            fontSize: 13, fontWeight: 500, padding: '3px 10px', borderRadius: 999,
+            background: current ? 'var(--accent-soft)' : 'var(--cream-deep)',
+            color: current ? 'var(--accent)' : 'var(--ink-3)',
+          }}>
+            {current ? 'Your plan' : 'Coming soon'}
+          </span>
+        )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
-        <span style={{ fontSize: '44px', fontWeight: '900', letterSpacing: '-0.04em', color: '#fff', lineHeight: 1 }}>
-          {plan.price}
-        </span>
-        {plan.interval && <span style={{ fontSize: '13px', color: muted }}>/ {plan.interval}</span>}
+      <div className="tnum" style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
+        <span style={{ fontSize: 48, fontWeight: 500, letterSpacing: '-0.05em', color: 'var(--ink)', lineHeight: 1 }}>{plan.price}</span>
+        {plan.interval && <span style={{ fontSize: 15, color: 'var(--ink-3)' }}>per {plan.interval}</span>}
       </div>
-
-      <div style={{ fontSize: '12px', color: highlighted ? 'rgba(255,255,255,0.65)' : '#444', marginBottom: '28px' }}>
-        {isFree ? 'No card required.' : (available ? 'Billed monthly' : 'Coming soon. Not yet available to buy.')}
+      <div style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 28 }}>
+        {isFree ? '\u00a0' : (available ? 'Billed monthly.' : 'Not available to buy yet.')}
       </div>
 
       {available ? (
-        <a href={href} style={{
-          display: 'block', textAlign: 'center',
-          background: highlighted ? '#fff' : '#4361ee', color: highlighted ? '#4361ee' : '#fff', border: 'none', borderRadius: '100px',
-          padding: '13px 28px', fontSize: '12px', fontWeight: '800',
-          letterSpacing: '0.08em', textTransform: 'uppercase',
-          textDecoration: 'none', marginBottom: '28px',
-        }}>
-          {cta}
-        </a>
+        <a href={href} className="btn btn-ink" style={{ width: '100%', marginBottom: 28 }}>{cta}</a>
       ) : (
-        <div style={{
-          background: highlighted ? 'rgba(255,255,255,0.15)' : '#1a1a1a',
-          color: highlighted ? 'rgba(255,255,255,0.7)' : '#444',
-          border: `1px solid ${highlighted ? 'rgba(255,255,255,0.3)' : '#2a2a2a'}`,
-          borderRadius: '100px', padding: '13px 28px',
-          fontSize: '12px', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase',
-          textAlign: 'center', marginBottom: '28px', cursor: 'default',
-        }}>
-          Coming soon
-        </div>
+        <div className="btn btn-line" aria-disabled="true" style={{ width: '100%', marginBottom: 28, color: 'var(--ink-3)', cursor: 'default' }}>Coming soon</div>
       )}
 
-      <div style={{ borderTop: `1px solid ${highlighted ? 'rgba(255,255,255,0.2)' : '#1a1a1a'}`, marginBottom: '24px' }} />
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <ul style={{ listStyle: 'none', display: 'grid', gap: 12, borderTop: '1px solid var(--line)', paddingTop: 24 }}>
         {plan.features.map((f) => (
-          <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-            <span style={{ color: highlighted ? '#fff' : (isFree ? '#4ade80' : '#777'), flexShrink: 0, marginTop: '1px' }}>{CHECK_ICON}</span>
-            <span style={{ fontSize: '13px', color: highlighted ? 'rgba(255,255,255,0.85)' : (isFree ? '#bbb' : '#888'), lineHeight: '1.4' }}>{f}</span>
-          </div>
+          <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.45 }}>
+            <span style={{ color: 'var(--accent)', flexShrink: 0, lineHeight: 0, marginTop: 1 }}><TickCircle size={18} color="currentColor" /></span>
+            <span className="tnum">{f}</span>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </SpotlightCard>
   );
 }

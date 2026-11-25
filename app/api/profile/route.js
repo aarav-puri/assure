@@ -11,8 +11,10 @@ export const GET = withUser(async (_request, _ctx, user) => {
       id: user.id,
       email: user.email,
       name: user.name,
+      // Expiry reminders are always on and cannot be turned off; only the
+      // lead time is configurable.
       notificationPrefs: {
-        enabled: user.notif_enabled,
+        enabled: true,
         daysBefore: user.notif_days_before,
       },
     },
@@ -34,10 +36,6 @@ export const PATCH = withUser(async (request, _ctx, user) => {
     sets.push(`name = $${vals.length}`);
   }
   if (body.notificationPrefs) {
-    if ('enabled' in body.notificationPrefs) {
-      vals.push(!!body.notificationPrefs.enabled);
-      sets.push(`notif_enabled = $${vals.length}`);
-    }
     if ('daysBefore' in body.notificationPrefs) {
       const days = Number(body.notificationPrefs.daysBefore);
       if (!Number.isInteger(days) || days < 1) {
@@ -52,7 +50,7 @@ export const PATCH = withUser(async (request, _ctx, user) => {
   vals.push(user.id);
   const row = await queryOne(
     `UPDATE app_users SET ${sets.join(', ')} WHERE id = $${vals.length}
-       RETURNING id, email, name, notif_enabled, notif_days_before`,
+       RETURNING id, email, name, notif_days_before`,
     vals
   );
   return Response.json({
@@ -60,7 +58,7 @@ export const PATCH = withUser(async (request, _ctx, user) => {
       id: row.id,
       email: row.email,
       name: row.name,
-      notificationPrefs: { enabled: row.notif_enabled, daysBefore: row.notif_days_before },
+      notificationPrefs: { enabled: true, daysBefore: row.notif_days_before },
     },
   });
 });

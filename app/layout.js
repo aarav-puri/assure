@@ -1,15 +1,8 @@
-import { Inter } from 'next/font/google';
 import './globals.css';
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-inter',
-});
 
 export const metadata = {
   title: 'Assure',
-  description: 'Track and manage all your product warranties in one place.',
+  description: 'Keep every warranty you own in one place, see what expires next, and get help filing a claim.',
   icons: {
     // Required: defining an `icons` object suppresses the file-based
     // app/icon.png link, so the favicon must be declared explicitly here.
@@ -28,7 +21,7 @@ export const metadata = {
   },
   other: {
     'mobile-web-app-capable': 'yes',
-    'theme-color': '#080808',
+    'theme-color': '#0b0b0a',
     'google-site-verification': '9_JzOdfOk3oOJkfW-pZ7t_XjlRBABpYdauzpEX9h1i0',
   },
 };
@@ -36,17 +29,20 @@ export const metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: '#080808',
+  themeColor: '#0b0b0a',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.className} ${inter.variable}`}>
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preload" href="/fonts/CabinetGrotesk-500.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link rel="preconnect" href="https://cdn.fontshare.com" crossOrigin="" />
+        <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap" />
         <script dangerouslySetInnerHTML={{
           __html: `
+            document.documentElement.classList.add('js');
             if (typeof window !== 'undefined' && window.process === undefined) {
               console.log = function() {};
               console.warn = function() {};

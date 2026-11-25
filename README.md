@@ -40,14 +40,14 @@ Assure keeps every warranty you own in one place. It tracks what is covered, cou
 
 ## Plans
 
-| | Free trial | Assure+ |
+| | Free | Assure+ |
 | --- | --- | --- |
 | Price | $0 | $5 / month |
-| Warranties | 5 | 100 |
-| AI receipt scans | 1 | 50 per month |
-| AI claim sessions | 1 (up to 10 messages) | 25 per month (up to 10 messages each) |
+| Warranties | 10 | 100 |
+| AI receipt scans | 2 per month | 50 per month |
+| AI claim sessions | 1 per month (up to 10 messages) | 25 per month (up to 10 messages each) |
 
-Limits live in [`lib/plans.js`](lib/plans.js), the single source for the API routes, the pricing page and the dashboard meters. Billing is not live yet, so every account currently uses the free trial.
+Limits live in [`lib/plans.js`](lib/plans.js), the single source for the API routes, the pricing page and the dashboard meters. Billing is not live yet, so every account is on the Free plan. Monthly allowances reset on the 1st.
 
 ## Built with
 

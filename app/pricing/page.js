@@ -1,98 +1,50 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { authClient } from '@/lib/auth/client';
 import { PLANS } from '@/lib/plans';
 import PlanCard from '@/components/PlanCard';
+import MeshGradient from '@/components/MeshGradient';
+import { SiteNav, SiteFooter, useSessionUser } from '@/components/SiteChrome';
+import { WordReveal } from '@/components/motion';
 
 export default function PricingPage() {
-  const [user, setUser] = useState(null);
+  const user = useSessionUser();
 
-  useEffect(() => {
-    let cancelled = false;
-    authClient.getSession()
-      .then(({ data }) => { if (!cancelled) setUser(data?.user ?? null); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
+  const faqs = [
+    { q: 'What counts as a scan?', a: 'Each time Assure reads a receipt photo and fills in the warranty details for you.' },
+    { q: 'What is a claim session?', a: `One conversation with the claim assistant about a single product, up to ${PLANS.free.limits.claimMessages} messages. Follow-up questions in the same conversation don’t use another session.` },
+    { q: 'Is the Free plan really free?', a: 'Yes. It isn’t a trial and it doesn’t expire. Your receipt scans and claim sessions reset on the 1st of each month.' },
+    { q: 'When does Assure+ launch?', a: 'It isn’t available to buy yet. Until then, the Free plan is the only plan.' },
+  ];
 
   return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff' }}>
-      {/* Nav */}
-      <nav id="navbar">
-        <a href="/" className="nav-logo">
-          <img src="/favicon.png" width="22" height="22" alt="Assure" />
-          <span className="nav-logo-text">Assure</span>
-        </a>
-        <div className="nav-links">
-          <a href="/#features" className="nav-link">Features</a>
-          <a href="/pricing" className="nav-link" style={{ color: '#fff' }}>Pricing</a>
-          {user ? (
-            <a href="/app" className="btn-cta" style={{ padding: '10px 24px', fontSize: '12px' }}>Open App</a>
-          ) : (
-            <a href="/login" className="btn-cta" style={{ padding: '10px 24px', fontSize: '12px' }}>Sign in</a>
-          )}
+    <div className="site">
+      <SiteNav user={user} current="Pricing" />
+
+      <header className="hero-shell" style={{ paddingBottom: 24 }}>
+        <MeshGradient className="hero-gradient" />
+        <div className="wrap hero-copy">
+          <h1 className="display" style={{ fontSize: 'clamp(42px, 6vw, 76px)' }}><WordReveal text="Pricing" /></h1>
         </div>
-      </nav>
+      </header>
 
-      {/* Hero */}
-      <section style={{ padding: '140px 48px 64px', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
-        <h1 className="headline-lg" style={{ marginBottom: '20px' }}>
-          Pricing built<br />around you.
-        </h1>
-        <p className="body-text" style={{ maxWidth: '460px', margin: '0 auto' }}>
-          Try Assure free. Assure+ is on the way for when you need more.
-        </p>
-      </section>
-
-      {/* Plan cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-        gap: '16px',
-        maxWidth: '720px',
-        margin: '0 auto',
-        padding: '0 48px 120px',
-        justifyContent: 'center',
-      }}>
-        <PlanCard
-          plan={PLANS.free}
-          current={!!user}
-          href={user ? '/app' : '/login'}
-          cta={user ? 'Open Assure' : 'Start free trial'}
-        />
-        <PlanCard plan={PLANS.plus} highlighted available={false} />
-      </div>
-
-      {/* Definitions */}
-      <div style={{
-        borderTop: '1px solid #141414',
-        maxWidth: '680px',
-        margin: '0 auto',
-        padding: '64px 48px',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '40px',
-      }}>
-        {[
-          { q: 'What counts as a scan?', a: 'Each time AI receipt scanning reads a photo and fills in the warranty details for you.' },
-          { q: 'What is a claim session?', a: `One conversation with the AI claim assistant about a single product, up to ${PLANS.free.limits.claimMessages} messages. Follow up questions in the same conversation do not use another session.` },
-          { q: 'When does Assure+ launch?', a: 'It is not available to buy yet. Until then, the free trial is the only plan.' },
-        ].map(({ q, a }) => (
-          <div key={q}>
-            <div style={{ fontSize: '15px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>{q}</div>
-            <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.6' }}>{a}</div>
-          </div>
-        ))}
-      </div>
-
-      <footer>
-        <div style={{ fontSize: '13px', color: '#444' }}>© {new Date().getFullYear()} Assure. All rights reserved.</div>
-        <div style={{ display: 'flex', gap: '24px' }}>
-          <a href="/privacy" style={{ fontSize: '13px', color: '#444', textDecoration: 'none' }}>Privacy</a>
-          <a href="/terms" style={{ fontSize: '13px', color: '#444', textDecoration: 'none' }}>Terms</a>
+      <main className="wrap" style={{ paddingBottom: 120 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, maxWidth: 760, margin: '48px auto 0' }}>
+          <PlanCard plan={PLANS.free} current={!!user} href={user ? '/app' : '/login'} cta={user ? 'Open dashboard' : 'Get started free'} />
+          <PlanCard plan={PLANS.plus} available={false} />
         </div>
-      </footer>
+
+        <div style={{ maxWidth: 760, margin: '96px auto 0', borderTop: '1px solid var(--line)' }}>
+          {faqs.map(({ q, a }) => (
+            <div key={q} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: '8px 40px', padding: '28px 0', borderBottom: '1px solid var(--line)' }} className="faq-row">
+              <h2 className="h3" style={{ fontSize: 17 }}>{q}</h2>
+              <p className="body" style={{ color: 'var(--ink-2)' }}>{a}</p>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      <style>{`@media (max-width: 640px) { .faq-row { grid-template-columns: 1fr !important; } }`}</style>
+      <SiteFooter />
     </div>
   );
 }

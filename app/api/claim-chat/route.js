@@ -95,7 +95,7 @@ export async function POST(request) {
       if (started.blocked) {
         return NextResponse.json(
           {
-            error: `You have used your free trial claim session${CLAIM_LIMIT === 1 ? '' : 's'} (${started.used}/${CLAIM_LIMIT}).`,
+            error: `You have used this month's claim session${CLAIM_LIMIT === 1 ? '' : 's'} (${started.used}/${CLAIM_LIMIT}). More on the 1st.`,
             code: 'allowance_used',
           },
           { status: 429 }

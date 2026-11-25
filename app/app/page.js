@@ -4,6 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
 import { ENFORCED_PLAN } from '@/lib/plans';
+import { Monitor, Home2, Car, Ruler, Bag2, Brush, Lamp, Activity, Box, Add, ArrowDown2, SearchNormal1, Element3, RowVertical, Edit2, Setting2, Logout, MessageText1 } from 'iconsax-reactjs';
+import { LogoMark } from '@/components/Logo';
+import MeshGradient from '@/components/MeshGradient';
+import { WordReveal, DominoName, NumberTicker, SpotlightCard } from '@/components/motion';
 // ── downscale image for AI scan (Vercel Functions cap request bodies at 4.5MB) ─
 async function resizeImageForScan(file, maxDimension = 1600, quality = 0.8) {
   const dataUrl = await new Promise((resolve, reject) => {
@@ -60,20 +64,21 @@ function formatPrice(p) {
   return '$' + parseFloat(p).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
-// Generates a unique repeatable gradient from a string (name/email)
+// A repeatable greyscale gradient from a string (name/email), like light on
+// brushed metal. The angle and tones vary slightly per account.
 function avatarGradient(str = '') {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
     hash |= 0;
   }
-  const h1 = Math.abs(hash) % 360;
-  const h2 = (h1 + 45 + (Math.abs(hash >> 8) % 70)) % 360;
-  const angle = 135 + (Math.abs(hash >> 4) % 60);
-  return `linear-gradient(${angle}deg, hsl(${h1},75%,45%), hsl(${h2},80%,58%))`;
+  const angle = 120 + (Math.abs(hash) % 90);
+  const light = 92 + (Math.abs(hash >> 4) % 7);   // 92-98%
+  const dark = 58 + (Math.abs(hash >> 8) % 14);   // 58-71%
+  return `linear-gradient(${angle}deg, hsl(40,6%,${light}%), hsl(40,4%,${dark}%))`;
 }
 
-// Avatar: shows Google photo if available, otherwise gradient + initial
+// Avatar: shows the account photo if there is one, otherwise a greyscale gradient + initial
 function UserAvatar({ user, name, size = 24, fontSize = 11 }) {
   if (user?.photoURL) {
     return (
@@ -87,25 +92,16 @@ function UserAvatar({ user, name, size = 24, fontSize = 11 }) {
     );
   }
   return (
-    <div style={{ width:size, height:size, borderRadius:'50%', background:avatarGradient(name || user?.email || '?'), display:'flex', alignItems:'center', justifyContent:'center', fontSize, fontWeight:800, color:'#fff', flexShrink:0 }}>
+    <div style={{ width:size, height:size, borderRadius:'50%', background:avatarGradient(name || user?.email || '?'), display:'flex', alignItems:'center', justifyContent:'center', fontSize, fontWeight:600, color:'#0b0b0a', flexShrink:0 }}>
       {(name || user?.email || '?').charAt(0).toUpperCase()}
     </div>
   );
 }
 
-function CategoryIcon({ cat }) {
-  const p = { width:13, height:13, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:'1.8', strokeLinecap:'round', strokeLinejoin:'round' };
-  switch(cat) {
-    case 'Electronics': return <svg {...p}><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>;
-    case 'Appliances': return <svg {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
-    case 'Automotive': return <svg {...p}><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-2"/><circle cx="9" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>;
-    case 'Footwear': return <svg {...p}><path d="M2 17v-3c0-1 .8-2 1.8-2 1.4 0 2.8-.7 3.7-1.8L9 7.5c.6-.8 1.8-.6 2.1.4L12 11h7c1.5 0 2 1 2 2v4"/><path d="M2 17h20v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><line x1="13" y1="14" x2="16" y2="14"/></svg>;
-    case 'Clothing': return <svg {...p}><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>;
-    case 'Tools': return <svg {...p}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>;
-    case 'Furniture': return <svg {...p}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>;
-    case 'Sports': return <svg {...p}><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>;
-    default: return <svg {...p}><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>;
-  }
+const CATEGORY_ICONS = { Electronics: Monitor, Appliances: Home2, Automotive: Car, Footwear: Ruler, Clothing: Bag2, Tools: Brush, Furniture: Lamp, Sports: Activity };
+function CategoryIcon({ cat, size = 14 }) {
+  const Icon = CATEGORY_ICONS[cat] || Box;
+  return <Icon size={size} color="currentColor" />;
 }
 
 const EMPTY_FORM = { productName:'', brand:'', category:'', purchaseDate:'', expiryDate:'', price:'', retailer:'', serial:'', notes:'', receiptUrl:'', receiptBase64:'', receiptName:'' };
@@ -121,15 +117,14 @@ export default function AppPage() {
   const [isMobileView, setIsMobileView] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  const [notifPrefs, setNotifPrefs] = useState({ enabled: false, daysBefore: 30 });
-  const [savingNotifPrefs, setSavingNotifPrefs] = useState(false);
+  // Expiry reminders are always on; only the lead time is a preference.
+  const [notifPrefs, setNotifPrefs] = useState({ daysBefore: 30 });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('expiry-asc');
   const [showWarrantyModal, setShowWarrantyModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showNotifModal, setShowNotifModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ name: '', password: '' });
   const [savingSettings, setSavingSettings] = useState(false);
@@ -144,7 +139,6 @@ export default function AppPage() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [statValues, setStatValues] = useState({ total:0, active:0, expiring:0, expired:0 });
-  const [bellRing, setBellRing] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
@@ -283,10 +277,7 @@ export default function AppPage() {
           const { profile, usage, limits: serverLimits } = await res.json();
           if (cancelled) return;
           setUserProfile(profile);
-          const prefs = {
-            enabled: !!profile.notificationPrefs.enabled,
-            daysBefore: profile.notificationPrefs.daysBefore || 30,
-          };
+          const prefs = { daysBefore: profile.notificationPrefs.daysBefore || 30 };
           setNotifPrefs(prefs);
           setSelectedDaysBefore(prefs.daysBefore);
           setSettingsForm({ name: profile.name || data.user.name || '', password: '' });
@@ -345,7 +336,7 @@ export default function AppPage() {
   const scanReceiptWithAI = async () => {
     if (!receiptFile) return;
     if (scanUsed >= SCAN_LIMIT) {
-      setFormError(`You have used your free trial scan${SCAN_LIMIT === 1 ? '' : 's'} (${scanUsed}/${SCAN_LIMIT}).`);
+      setFormError(`You have used this month's receipt scan${SCAN_LIMIT === 1 ? '' : 's'} (${scanUsed}/${SCAN_LIMIT}). More on the 1st.`);
       return;
     }
     setScanLoading(true);
@@ -481,7 +472,7 @@ export default function AppPage() {
       // The API enforces the plan limit and ownership; this is only a fast
       // client-side guard so the user sees the message before a round trip.
       if (!editingId && warranties.length >= WARRANTY_LIMIT) {
-        setFormError(`Free trial limit reached (${WARRANTY_LIMIT} warranties). Assure+ is coming soon.`);
+        setFormError(`The Free plan is limited to ${WARRANTY_LIMIT} warranties. Assure+ is coming soon.`);
         setSavingWarranty(false);
         return;
       }
@@ -535,53 +526,36 @@ export default function AppPage() {
     }
   };
 
-  // ── Save notification prefs ────────────────────────────────────────────────
-  const saveNotifPrefs = async () => {
-    if (!currentUser || savingNotifPrefs) return;
-    const prefs = { enabled: notifPrefs.enabled, daysBefore: selectedDaysBefore };
-    setSavingNotifPrefs(true);
-    try {
-      const res = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificationPrefs: prefs }),
-      });
-      if (!res.ok) throw new Error('save failed');
-      setNotifPrefs(prefs);
-
-      showToast('Notification preferences saved.', 'success');
-      setBellRing(true);
-      setTimeout(() => setBellRing(false), 1000);
-      setShowNotifModal(false);
-    } catch (err) {
-      showToast('Could not save notification preferences.', 'error');
-      console.error('saveNotifPrefs error:', err);
-    } finally {
-      setSavingNotifPrefs(false);
-    }
-  };
-
-  // ── Save settings ──────────────────────────────────────────────────────────
+  // ── Save settings (name + reminder timing, one request) ───────────────────
   const saveSettings = async (e) => {
-    e.preventDefault();
-    if (!currentUser) return;
+    e?.preventDefault();
+    if (!currentUser || savingSettings) return;
     setSavingSettings(true);
     try {
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: settingsForm.name }),
+        body: JSON.stringify({ name: settingsForm.name, notificationPrefs: { daysBefore: selectedDaysBefore } }),
       });
       if (!res.ok) throw new Error('save failed');
       setUserProfile(prev => ({ ...prev, name: settingsForm.name }));
+      setNotifPrefs({ daysBefore: selectedDaysBefore });
       showToast('Settings saved.', 'success');
       setShowSettingsModal(false);
     } catch (err) {
-      showToast('Failed to save settings.', 'error');
+      showToast('Could not save settings.', 'error');
     } finally {
       setSavingSettings(false);
     }
   };
+
+  // Close the settings page with Escape
+  useEffect(() => {
+    if (!showSettingsModal) return;
+    const onKey = (ev) => { if (ev.key === 'Escape') setShowSettingsModal(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showSettingsModal]);
 
   // ── Filter + sort ──────────────────────────────────────────────────────────
   const getFiltered = () => {
@@ -643,13 +617,13 @@ export default function AppPage() {
   };
 
   // ── Status helpers ─────────────────────────────────────────────────────────
-  const statusColor = { active: '#4ade80', expiring: '#f59e0b', expired: '#ef4444' };
-  const statusBg = { active: 'rgba(74,222,128,0.08)', expiring: 'rgba(245,158,11,0.08)', expired: 'rgba(239,68,68,0.08)' };
+  const statusColor = { active: '#6cc08f', expiring: '#e3ad55', expired: '#e0695e' };
+  const statusBg = { active: 'rgba(108,192,143,0.08)', expiring: 'rgba(227,173,85,0.08)', expired: 'rgba(224,105,94,0.08)' };
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ background:'#080808', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ background:'#0b0b0a', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
         <div className="spinner-anim" style={{ width:32, height:32, border:'2px solid #1e1e1e', borderTopColor:'#fff', borderRadius:'50%' }}></div>
       </div>
     );
@@ -659,7 +633,7 @@ export default function AppPage() {
   const displayEmail = currentUser?.email || '';
 
   // ── Render grid card ───────────────────────────────────────────────────────
-  const renderGridCard = (w) => {
+  const renderGridCard = (w, i = 0) => {
     const status = getStatus(w);
     const days = daysRemaining(w.expiryDate);
     const sColor = statusColor[status];
@@ -671,7 +645,8 @@ export default function AppPage() {
       return Math.min(100, Math.max(0, Math.round((elapsed/total)*100)));
     })();
     return (
-      <div key={w.id} className="warranty-card" onClick={() => { setViewId(w.id); setShowViewModal(true); }} style={{ cursor:'pointer', padding:0, overflow:'hidden', display:'flex', flexDirection:'column' }}>
+      <div key={w.id} className="rise" style={{ display:'flex', animationDelay:`${220 + Math.min(i, 8) * 50}ms` }}>
+      <SpotlightCard orbit={false} className="warranty-card" onClick={() => { setViewId(w.id); setShowViewModal(true); }} style={{ cursor:'pointer', padding:0, display:'flex', flexDirection:'column', flex:1 }}>
 
         {/* ── Card body ── */}
         <div style={{ padding:'20px 20px 16px', flex:1 }}>
@@ -681,19 +656,19 @@ export default function AppPage() {
             <div style={{ minWidth:0, flex:1 }}>
               {/* Category tag with icon */}
               {w.category && (
-                <div style={{ display:'inline-flex', alignItems:'center', gap:'5px', background:'#161616', border:'1px solid #222', borderRadius:'6px', padding:'4px 9px', marginBottom:'9px', color:'#666', fontSize:'11px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:'5px', background:'#161616', border:'1px solid #222', borderRadius:'6px', padding:'4px 9px', marginBottom:'9px', color:'#666', fontSize:'11px', fontWeight:600 }}>
                   <CategoryIcon cat={w.category} />
                   {w.category}
                 </div>
               )}
               {/* Product name */}
-              <div style={{ fontSize:'16px', fontWeight:800, letterSpacing:'-0.02em', color:'#f0f0f0', lineHeight:1.25 }}>{w.productName}</div>
+              <div style={{ fontSize:'16px', fontWeight:600, letterSpacing:'-0.02em', color:'#f0f0f0', lineHeight:1.25 }}>{w.productName}</div>
               {w.brand && <div style={{ fontSize:'12px', color:'#555', marginTop:'3px' }}>{w.brand}</div>}
             </div>
             {/* Status badge */}
             <div style={{ display:'flex', alignItems:'center', gap:'5px', background:sBg, border:`1px solid ${sColor}30`, borderRadius:'20px', padding:'4px 10px', flexShrink:0 }}>
               <div style={{ width:5, height:5, borderRadius:'50%', background:sColor }} />
-              <span style={{ fontSize:'10px', fontWeight:700, color:sColor, textTransform:'uppercase', letterSpacing:'0.08em' }}>{status}</span>
+              <span style={{ fontSize:'12px', fontWeight:500, color:sColor }}>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
             </div>
           </div>
 
@@ -705,7 +680,7 @@ export default function AppPage() {
           {/* Expiry date + days remaining */}
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
             <div style={{ fontSize:'12px', color:'#555' }}>{formatDate(w.expiryDate)}</div>
-            <div style={{ fontSize:'12px', fontWeight:700, color:sColor }}>
+            <div style={{ fontSize:'12px', fontWeight:600, color:sColor }}>
               {days < 0 ? `${Math.abs(days)}d ago` : `${days}d left`}
             </div>
           </div>
@@ -720,25 +695,26 @@ export default function AppPage() {
           <button
             type="button"
             onClick={e => { e.stopPropagation(); openEdit(w); }}
-            style={{ display:'flex', alignItems:'center', gap:'4px', background:'#1a1a1a', border:'1px solid #2a2a2a', borderRadius:'6px', color:'#666', fontSize:'10px', fontWeight:700, padding:'5px 9px', cursor:'pointer', transition:'all 0.15s', fontFamily:'Inter, sans-serif', letterSpacing:'0.04em', textTransform:'uppercase' }}
+            style={{ display:'flex', alignItems:'center', gap:'4px', background:'#1a1a1a', border:'1px solid #2a2a2a', borderRadius:'6px', color:'#8a877f', fontSize:'12px', fontWeight:500, padding:'5px 10px', cursor:'pointer', transition:'all 0.15s' }}
             onMouseOver={e => { e.currentTarget.style.background='#242424'; e.currentTarget.style.color='#ccc'; e.currentTarget.style.borderColor='#3a3a3a'; }}
             onMouseOut={e => { e.currentTarget.style.background='#1a1a1a'; e.currentTarget.style.color='#666'; e.currentTarget.style.borderColor='#2a2a2a'; }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <Edit2 size={13} color="currentColor" />
             Edit
           </button>
         </div>
+      </SpotlightCard>
       </div>
     );
   };
 
   // ── Render list row ────────────────────────────────────────────────────────
-  const renderListRow = (w) => {
+  const renderListRow = (w, i = 0) => {
     const status = getStatus(w);
     const days = daysRemaining(w.expiryDate);
     const sColor = statusColor[status];
     const sBg = statusBg[status];
     return (
-      <div key={w.id} className="list-row" onClick={() => { setViewId(w.id); setShowViewModal(true); }} style={{ cursor:'pointer' }}>
+      <div key={w.id} className="list-row rise" onClick={() => { setViewId(w.id); setShowViewModal(true); }} style={{ cursor:'pointer', animationDelay:`${220 + Math.min(i, 10) * 30}ms` }}>
         <div className="list-row-main" style={{ display:'flex', alignItems:'center', gap:'10px', minWidth:0 }}>
           <div style={{ width:28, height:28, borderRadius:'7px', background:'#161616', border:'1px solid #222', display:'flex', alignItems:'center', justifyContent:'center', color:'#666', flexShrink:0 }}>
             <CategoryIcon cat={w.category} />
@@ -751,11 +727,11 @@ export default function AppPage() {
         </div>
         <div className="list-col-desktop" style={{ fontSize:'12px', color:'#666' }}>{w.category || 'N/A'}</div>
         <div className="list-col-desktop" style={{ fontSize:'12px', color:'#666' }}>{formatDate(w.expiryDate)}</div>
-        <div style={{ fontSize:'12px', fontWeight:700, color:sColor, flexShrink:0 }}>{days < 0 ? `${Math.abs(days)}d ago` : `${days}d`}</div>
+        <div style={{ fontSize:'12px', fontWeight:600, color:sColor, flexShrink:0 }}>{days < 0 ? `${Math.abs(days)}d ago` : `${days}d`}</div>
         <div style={{ flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:'5px', background:sBg, border:`1px solid ${sColor}22`, borderRadius:'20px', padding:'3px 8px', width:'fit-content' }}>
             <div style={{ width:5, height:5, borderRadius:'50%', background:sColor }}></div>
-            <span style={{ fontSize:'10px', fontWeight:700, color:sColor, textTransform:'uppercase', letterSpacing:'0.08em' }}>{status}</span>
+            <span style={{ fontSize:'12px', fontWeight:500, color:sColor }}>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
           </div>
         </div>
         <div className="list-col-desktop" style={{ fontSize:'12px', color:'#666', fontWeight:600 }}>{formatPrice(w.price)}</div>
@@ -764,25 +740,16 @@ export default function AppPage() {
   };
 
   return (
-    <div style={{ background:'#080808', color:'#fff', fontFamily:'Inter, sans-serif', minHeight:'100vh' }}>
+    <div className="app-shell">
+      <MeshGradient className="app-glow" />
 
       {/* ── Nav ── */}
-      <nav style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 24px', height:'56px', borderBottom:'1px solid #141414', background:'rgba(8,8,8,0.95)', backdropFilter:'blur(20px)', position:'sticky', top:0, zIndex:100 }}>
-        <a href="/" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none' }}>
-          <img src="/favicon.png" width="28" height="28" alt="ASSURE" style={{ borderRadius:'6px' }} />
-          <span style={{ fontSize:'15px', fontWeight:'800', letterSpacing:'0.15em', textTransform:'uppercase', color:'#fff', lineHeight:1 }}>ASSURE</span>
-          <span className="hide-mobile" style={{ fontSize:'12px', fontWeight:500, color:'#444', letterSpacing:'0.02em', marginLeft:'2px' }}>Warranty Tracker</span>
+      <nav className="app-nav">
+        <a href="/" style={{ display:'flex', alignItems:'center', gap:'9px', textDecoration:'none', color:'#f4f3f0' }}>
+          <LogoMark size={26} />
+          <span style={{ fontSize:'16px', fontWeight:600, letterSpacing:'-0.03em', color:'#fff', lineHeight:1 }}>Assure</span>
         </a>
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-          {/* Bell */}
-          <button onClick={() => { setShowNotifModal(true); setUserMenuOpen(false); }} style={{ position:'relative', background:'none', border:'1px solid #1e1e1e', borderRadius:'8px', padding:'7px', color:'#666', cursor:'pointer', transition:'all 0.15s', lineHeight:0 }} className={`hide-mobile${bellRing ? ' bell-ring' : ''}`} title="Notifications">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            {expiringCount > 0 && (
-              <span className="notif-badge" style={{ position:'absolute', top:'-4px', right:'-4px', background:'#f59e0b', color:'#000', fontSize:'9px', fontWeight:800, borderRadius:'10px', minWidth:'16px', height:'16px', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 3px' }}>
-                {expiringCount}
-              </span>
-            )}
-          </button>
           {/* User menu */}
           <div style={{ position:'relative', alignSelf:'center' }} ref={userMenuRef}>
             <button onClick={() => setUserMenuOpen(!userMenuOpen)} style={{ display:'flex', alignItems:'center', gap:'8px', background:'#111', border:'1px solid #1e1e1e', borderRadius:'8px', padding:'6px 10px', cursor:'pointer', transition:'all 0.15s' }}>
@@ -793,7 +760,7 @@ export default function AppPage() {
             {userMenuOpen && (
               <div style={{ position:'absolute', top:'calc(100% + 8px)', right:0, background:'#0f0f0f', border:'1px solid #1e1e1e', borderRadius:'12px', padding:'8px', minWidth:'200px', boxShadow:'0 16px 48px rgba(0,0,0,0.6)', zIndex:200 }}>
                 <div style={{ padding:'8px 12px 12px', borderBottom:'1px solid #1a1a1a', marginBottom:'8px' }}>
-                  <div style={{ fontSize:'13px', fontWeight:700, color:'#e0e0e0' }}>{displayName}</div>
+                  <div style={{ fontSize:'13px', fontWeight:600, color:'#e0e0e0' }}>{displayName}</div>
                   <div style={{ fontSize:'11px', color:'#444', marginTop:'2px' }}>{displayEmail}</div>
                   {/* AI usage */}
                   <div style={{ marginTop:'10px', background:'#161616', border:'1px solid #1e1e1e', borderRadius:'8px', padding:'8px 10px', display:'flex', flexDirection:'column', gap:'8px' }}>
@@ -802,14 +769,14 @@ export default function AppPage() {
                       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'5px' }}>
                         <div style={{ display:'flex', alignItems:'center', gap:'5px' }}>
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                          <span style={{ fontSize:'10px', fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:'0.08em' }}>AI Scans</span>
+                          <span style={{ fontSize:'12px', fontWeight:500, color:'var(--text-2)' }}>Receipt scans</span>
                         </div>
-                        <span style={{ fontSize:'11px', fontWeight:700, color: scanUsed >= SCAN_LIMIT ? '#ef4444' : scanUsed >= SCAN_LIMIT - 1 ? '#f59e0b' : '#4ade80' }}>
+                        <span style={{ fontSize:'11px', fontWeight:600, color: scanUsed >= SCAN_LIMIT ? '#e0695e' : scanUsed >= SCAN_LIMIT - 1 ? '#e3ad55' : '#6cc08f' }}>
                           {scanUsed}/{SCAN_LIMIT}
                         </span>
                       </div>
                       <div style={{ height:'3px', borderRadius:'2px', background:'#2a2a2a', overflow:'hidden' }}>
-                        <div style={{ height:'100%', borderRadius:'2px', width:`${Math.min((scanUsed / SCAN_LIMIT) * 100, 100)}%`, background: scanUsed >= SCAN_LIMIT ? '#ef4444' : scanUsed >= SCAN_LIMIT - 1 ? '#f59e0b' : '#4ade80', transition:'width 0.3s ease' }} />
+                        <div style={{ height:'100%', borderRadius:'2px', width:`${Math.min((scanUsed / SCAN_LIMIT) * 100, 100)}%`, background: scanUsed >= SCAN_LIMIT ? '#e0695e' : scanUsed >= SCAN_LIMIT - 1 ? '#e3ad55' : '#6cc08f', transition:'width 0.3s ease' }} />
                       </div>
                     </div>
                     {/* Claim chats row */}
@@ -817,31 +784,27 @@ export default function AppPage() {
                       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px', marginBottom:'5px' }}>
                         <div style={{ display:'flex', alignItems:'center', gap:'5px' }}>
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                          <span style={{ fontSize:'10px', fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:'0.08em' }}>Claim Sessions</span>
+                          <span style={{ fontSize:'12px', fontWeight:500, color:'var(--text-2)' }}>Claim sessions</span>
                         </div>
-                        <span style={{ fontSize:'11px', fontWeight:700, color: claimUsed >= CLAIM_LIMIT ? '#ef4444' : claimUsed >= CLAIM_LIMIT - 1 ? '#f59e0b' : '#4ade80' }}>
+                        <span style={{ fontSize:'11px', fontWeight:600, color: claimUsed >= CLAIM_LIMIT ? '#e0695e' : claimUsed >= CLAIM_LIMIT - 1 ? '#e3ad55' : '#6cc08f' }}>
                           {claimUsed}/{CLAIM_LIMIT}
                         </span>
                       </div>
                       <div style={{ height:'3px', borderRadius:'2px', background:'#2a2a2a', overflow:'hidden' }}>
-                        <div style={{ height:'100%', borderRadius:'2px', width:`${Math.min((claimUsed / CLAIM_LIMIT) * 100, 100)}%`, background: claimUsed >= CLAIM_LIMIT ? '#ef4444' : claimUsed >= CLAIM_LIMIT - 1 ? '#f59e0b' : '#4ade80', transition:'width 0.3s ease' }} />
+                        <div style={{ height:'100%', borderRadius:'2px', width:`${Math.min((claimUsed / CLAIM_LIMIT) * 100, 100)}%`, background: claimUsed >= CLAIM_LIMIT ? '#e0695e' : claimUsed >= CLAIM_LIMIT - 1 ? '#e3ad55' : '#6cc08f', transition:'width 0.3s ease' }} />
                       </div>
                     </div>
-                    <div style={{ fontSize:'10px', color:'#333' }}>Free trial allowance</div>
+                    <div style={{ fontSize:'10px', color:'#333' }}>Free plan, resets on the 1st</div>
                   </div>
                 </div>
-                <button onClick={() => { setShowNotifModal(true); setUserMenuOpen(false); }} style={{ display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'9px 12px', background:'none', border:'none', color:'#888', fontSize:'13px', cursor:'pointer', borderRadius:'7px', transition:'all 0.15s', textAlign:'left' }} onMouseOver={e=>e.currentTarget.style.background='#161616'} onMouseOut={e=>e.currentTarget.style.background='none'}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                  Notifications
-                </button>
-                <button onClick={() => { setShowSettingsModal(true); setUserMenuOpen(false); }} style={{ display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'9px 12px', background:'none', border:'none', color:'#888', fontSize:'13px', cursor:'pointer', borderRadius:'7px', transition:'all 0.15s', textAlign:'left' }} onMouseOver={e=>e.currentTarget.style.background='#161616'} onMouseOut={e=>e.currentTarget.style.background='none'}>
+                <button onClick={() => { setSelectedDaysBefore(notifPrefs.daysBefore || 30); setSettingsForm(p => ({ ...p, name: userProfile?.name || p.name })); setShowSettingsModal(true); setUserMenuOpen(false); }} style={{ display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'9px 12px', background:'none', border:'none', color:'#888', fontSize:'13px', cursor:'pointer', borderRadius:'7px', transition:'all 0.15s', textAlign:'left' }} onMouseOver={e=>e.currentTarget.style.background='#161616'} onMouseOut={e=>e.currentTarget.style.background='none'}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                   Settings
                 </button>
                 <div style={{ borderTop:'1px solid #1a1a1a', marginTop:'8px', paddingTop:'8px' }}>
-                  <button onClick={logout} style={{ display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'9px 12px', background:'none', border:'none', color:'#ef4444', fontSize:'13px', cursor:'pointer', borderRadius:'7px', transition:'all 0.15s', textAlign:'left' }} onMouseOver={e=>e.currentTarget.style.background='rgba(239,68,68,0.08)'} onMouseOut={e=>e.currentTarget.style.background='none'}>
+                  <button onClick={logout} style={{ display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'9px 12px', background:'none', border:'none', color:'#e0695e', fontSize:'13px', cursor:'pointer', borderRadius:'7px', transition:'all 0.15s', textAlign:'left' }} onMouseOver={e=>e.currentTarget.style.background='rgba(224,105,94,0.08)'} onMouseOut={e=>e.currentTarget.style.background='none'}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    Sign Out
+                    Sign out
                   </button>
                 </div>
               </div>
@@ -853,74 +816,71 @@ export default function AppPage() {
       <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'24px 20px' }}>
 
         {/* ── Hero banner ── */}
-        <div style={{ background:'linear-gradient(135deg, #0f0f0f 0%, #111 50%, #0f0f0f 100%)', border:'1px solid #1a1a1a', borderRadius:'16px', padding:'28px 32px', marginBottom:'24px', position:'relative', overflow:'hidden' }}>
-          <div style={{ position:'absolute', top:0, right:0, width:'300px', height:'100%', background:'radial-gradient(ellipse at right center, rgba(255,255,255,0.02) 0%, transparent 70%)', pointerEvents:'none' }}></div>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'16px' }}>
+        <div className="rise" style={{ padding:'40px 0 12px', marginBottom:'28px' }}>
+          <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', flexWrap:'wrap', gap:'16px' }}>
             <div>
-              <div style={{ fontSize:'22px', fontWeight:900, letterSpacing:'-0.03em', marginBottom:'6px' }}>
-                Welcome back, {displayName.split(' ')[0]}
+              <div className="app-title" style={{ marginBottom:'10px' }}>
+                <WordReveal text="Welcome back," step={0.08} /> <DominoName text={displayName.split(' ')[0]} />
               </div>
-              <div style={{ fontSize:'13px', color:'#555' }}>
+              <div className="tnum" style={{ fontSize:'14px', color:'var(--text-3)' }}>
                 {warranties.length === 0
                   ? 'No warranties tracked yet. Add your first one.'
-                  : `You have ${warranties.length} warrant${warranties.length === 1 ? 'y' : 'ies'} tracked${expiringCount > 0 ? ` · ${expiringCount} expiring soon` : ''}.`}
+                  : `You have ${warranties.length} warrant${warranties.length === 1 ? 'y' : 'ies'} tracked.${expiringCount > 0 ? ` ${expiringCount} expiring soon.` : ''}`}
               </div>
             </div>
             <button className="btn-primary" onClick={() => { setEditingId(null); setFormData(EMPTY_FORM); setFormError(''); setShowWarrantyModal(true); }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add Warranty
+              <Add size={16} color="currentColor" />
+              Add warranty
             </button>
           </div>
         </div>
 
         {/* ── Stat cards ── */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:'12px', marginBottom:'24px' }}>
+        <div className="corners rise stat-grid-mobile" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:'12px', marginBottom:'28px', animationDelay:'80ms' }}>
+          <span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" />
           {[
-            { key:'total', label:'Total', color:'#fff', icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> },
-            { key:'active', label:'Active', color:'#4ade80', icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
-            { key:'expiring', label:'Expiring', color:'#f59e0b', icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
-            { key:'expired', label:'Expired', color:'#ef4444', icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> },
-          ].map(({ key, label, color, icon }) => (
-            <div key={key} className="stat-card" onClick={() => setCurrentFilter(key === 'total' ? 'all' : key)} style={{ cursor:'pointer' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
-                <div style={{ fontSize:'11px', fontWeight:700, color:'#444', textTransform:'uppercase', letterSpacing:'0.1em' }}>{label}</div>
-                <div style={{ color: key === 'total' ? '#333' : color, opacity:0.7 }}>{icon}</div>
+            { key:'total', label:'Total', color:'var(--text)' },
+            { key:'active', label:'Active', color:'#6cc08f' },
+            { key:'expiring', label:'Expiring', color:'#e3ad55' },
+            { key:'expired', label:'Expired', color:'#e0695e' },
+          ].map(({ key, label, color }) => (
+            <SpotlightCard key={key} className="stat-card" onClick={() => setCurrentFilter(key === 'total' ? 'all' : key)} style={{ cursor:'pointer' }}>
+              <div style={{ fontSize:'13px', color:'var(--text-3)', marginBottom:'10px' }}>{label}</div>
+              <div className="ticker" style={{ fontSize:'30px', fontWeight:500, color, letterSpacing:'-0.04em', lineHeight:1 }}>
+                <NumberTicker target={statValues[key]} duration={1.2} />
               </div>
-              <div className="ticker" style={{ fontSize:'32px', fontWeight:900, color, letterSpacing:'-0.04em', lineHeight:1 }}>
-                {statValues[key]}
-              </div>
-            </div>
+            </SpotlightCard>
           ))}
         </div>
 
         {/* ── Toolbar ── */}
-        <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'16px', flexWrap:'wrap' }}>
+        <div className="rise" style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'16px', flexWrap:'wrap', animationDelay:'140ms' }}>
           <div style={{ flex:1, minWidth:'200px', position:'relative' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position:'absolute', left:'12px', top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input className="search-bar" type="text" placeholder="Search warranties…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ paddingLeft:'36px' }} />
+            <span style={{ position:'absolute', left:'14px', top:'50%', transform:'translateY(-50%)', pointerEvents:'none', color:'var(--text-3)', lineHeight:0 }}><SearchNormal1 size={16} color="currentColor" /></span>
+            <input className="search-bar" type="text" placeholder="Search warranties" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ paddingLeft:'40px' }} />
           </div>
           <select className="search-bar" value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ width:'auto', minWidth:'160px', paddingLeft:'14px' }}>
-            <option value="expiry-asc">Expiry (Soonest)</option>
-            <option value="expiry-desc">Expiry (Latest)</option>
+            <option value="expiry-asc">Expiry, soonest first</option>
+            <option value="expiry-desc">Expiry, latest first</option>
             <option value="name-asc">Name A–Z</option>
             <option value="name-desc">Name Z–A</option>
-            <option value="purchase-desc">Newest Purchase</option>
-            <option value="price-desc">Highest Value</option>
+            <option value="purchase-desc">Newest purchase</option>
+            <option value="price-desc">Highest value</option>
           </select>
           {!isMobileView && (
             <div style={{ display:'flex', gap:'4px' }}>
               <button className={`view-btn ${currentView==='grid'?'active':''}`} onClick={() => setCurrentView('grid')} title="Grid view">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <Element3 size={16} color="currentColor" />
               </button>
               <button className={`view-btn ${currentView==='list'?'active':''}`} onClick={() => setCurrentView('list')} title="List view">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <RowVertical size={16} color="currentColor" />
               </button>
             </div>
           )}
         </div>
 
         {/* ── Filter pills ── */}
-        <div style={{ display:'flex', gap:'8px', marginBottom:'20px', flexWrap:'wrap' }}>
+        <div className="rise" style={{ display:'flex', gap:'8px', marginBottom:'20px', flexWrap:'wrap', animationDelay:'180ms' }}>
           {['all','active','expiring','expired'].map(f => (
             <button key={f} className={`filter-pill ${currentFilter===f?'active':''}`} onClick={() => setCurrentFilter(f)}>
               {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
@@ -935,14 +895,14 @@ export default function AppPage() {
         {filtered.length === 0 ? (
           <div className="empty-state">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom:'16px' }}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            <div style={{ fontSize:'16px', fontWeight:700, color:'#333', marginBottom:'8px' }}>No warranties found</div>
+            <div style={{ fontSize:'16px', fontWeight:600, color:'#333', marginBottom:'8px' }}>No warranties found</div>
             <div style={{ fontSize:'13px', color:'#2a2a2a', marginBottom:'20px' }}>
               {searchQuery ? 'Try a different search term.' : 'Add your first warranty to get started.'}
             </div>
             {!searchQuery && (
               <button className="btn-primary" onClick={() => { setEditingId(null); setFormData(EMPTY_FORM); setFormError(''); setShowWarrantyModal(true); }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add Warranty
+                <Add size={16} color="currentColor" />
+                Add warranty
               </button>
             )}
           </div>
@@ -954,7 +914,7 @@ export default function AppPage() {
           <div>
             <div style={{ display:'grid', gridTemplateColumns:'2fr 1.2fr 1.1fr 1.1fr 100px 70px', gap:'12px', padding:'8px 16px', marginBottom:'4px' }}>
               {['Product','Category','Expires','Remaining','Status','Value'].map(h => (
-                <div key={h} style={{ fontSize:'10px', fontWeight:700, color:'#333', textTransform:'uppercase', letterSpacing:'0.1em' }}>{h}</div>
+                <div key={h} style={{ fontSize:'12px', fontWeight:500, color:'var(--text-3)' }}>{h}</div>
               ))}
             </div>
             {filtered.map(renderListRow)}
@@ -972,14 +932,14 @@ export default function AppPage() {
           <div className="modal-box" style={{ maxWidth:'540px', width:'100%' }} onClick={e => e.stopPropagation()}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'24px' }}>
               <div>
-                <h2 style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.03em', margin:0 }}>{editingId ? 'Edit Warranty' : 'Add Warranty'}</h2>
+                <h2 style={{ fontSize:'18px', fontWeight:600, letterSpacing:'-0.03em', margin:0 }}>{editingId ? 'Edit Warranty' : 'Add Warranty'}</h2>
                 <p style={{ fontSize:'12px', color:'#444', margin:'4px 0 0' }}>Track your product warranty details</p>
               </div>
               <button onClick={() => { setShowWarrantyModal(false); setEditingId(null); setFormData(EMPTY_FORM); }} style={{ background:'none', border:'1px solid #1e1e1e', borderRadius:'8px', color:'#555', cursor:'pointer', padding:'8px', lineHeight:0, transition:'all 0.15s' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            {formError && <div style={{ background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:'8px', padding:'10px 14px', fontSize:'13px', color:'#ef4444', marginBottom:'16px' }}>{formError}</div>}
+            {formError && <div style={{ background:'rgba(224,105,94,0.08)', border:'1px solid rgba(224,105,94,0.2)', borderRadius:'8px', padding:'10px 14px', fontSize:'13px', color:'#e0695e', marginBottom:'16px' }}>{formError}</div>}
             <form onSubmit={saveWarranty}>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
                 <div style={{ gridColumn:'1/-1' }}>
@@ -1012,7 +972,7 @@ export default function AppPage() {
                             base.setFullYear(base.getFullYear() + yr);
                             setFormData(p => ({ ...p, expiryDate: base.toISOString().slice(0,10) }));
                           }}
-                          style={{ background:'#1a1a1a', border:'1px solid #2a2a2a', color:'#666', borderRadius:'5px', padding:'3px 7px', fontSize:'10px', fontWeight:700, cursor:'pointer', transition:'all 0.15s' }}
+                          style={{ background:'#1a1a1a', border:'1px solid #2a2a2a', color:'#666', borderRadius:'5px', padding:'3px 7px', fontSize:'10px', fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}
                           onMouseOver={e => { e.currentTarget.style.borderColor='#444'; e.currentTarget.style.color='#ccc'; }}
                           onMouseOut={e => { e.currentTarget.style.borderColor='#2a2a2a'; e.currentTarget.style.color='#666'; }}>
                           +{yr}yr
@@ -1060,7 +1020,7 @@ export default function AppPage() {
                       </div>
                       {receiptFile && (
                         <button type="button" onClick={scanReceiptWithAI} disabled={scanLoading || scanUsed >= SCAN_LIMIT}
-                          style={{ display:'flex', alignItems:'center', gap:'6px', background: scanUsed >= SCAN_LIMIT ? '#111' : '#ffffff', border:`1px solid ${scanUsed >= SCAN_LIMIT ? '#222' : '#ffffff'}`, borderRadius:'7px', color: scanUsed >= SCAN_LIMIT ? '#444' : '#000000', fontSize:'11px', fontWeight:700, cursor: scanLoading || scanUsed >= SCAN_LIMIT ? 'not-allowed' : 'pointer', padding:'6px 10px', flexShrink:0, transition:'all 0.15s', fontFamily:'Inter, sans-serif' }}
+                          style={{ display:'flex', alignItems:'center', gap:'6px', background: scanUsed >= SCAN_LIMIT ? '#111' : '#ffffff', border:`1px solid ${scanUsed >= SCAN_LIMIT ? '#222' : '#ffffff'}`, borderRadius:'7px', color: scanUsed >= SCAN_LIMIT ? '#444' : '#000000', fontSize:'11px', fontWeight:600, cursor: scanLoading || scanUsed >= SCAN_LIMIT ? 'not-allowed' : 'pointer', padding:'6px 10px', flexShrink:0, transition:'all 0.15s' }}
                           onMouseOver={e => {
                             if (!(scanLoading || scanUsed >= SCAN_LIMIT)) {
                               e.currentTarget.style.background = '#e5e7eb';
@@ -1073,7 +1033,7 @@ export default function AppPage() {
                               e.currentTarget.style.borderColor = '#ffffff';
                             }
                           }}
-                          title={scanUsed >= SCAN_LIMIT ? 'Free trial scan used' : 'Use AI to extract fields from this receipt'}>
+                          title={scanUsed >= SCAN_LIMIT ? 'Monthly scans used' : 'Use AI to extract fields from this receipt'}>
                           {scanLoading ? (
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation:'spin 0.7s linear infinite' }}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
                           ) : (
@@ -1096,7 +1056,7 @@ export default function AppPage() {
                       <div style={{ color:'#444', marginBottom:'6px', lineHeight:0 }}>
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                       </div>
-                      <div style={{ fontSize:'13px', color:'#555', fontWeight:500 }}>Drop receipt here or <span style={{ color:'#888', fontWeight:700 }}>browse</span></div>
+                      <div style={{ fontSize:'13px', color:'#555', fontWeight:500 }}>Drop receipt here or <span style={{ color:'#888', fontWeight:600 }}>browse</span></div>
                       <div style={{ fontSize:'11px', color:'#333', marginTop:'4px' }}>JPG, PNG, WEBP up to 32MB</div>
                     </label>
                   )}
@@ -1134,14 +1094,14 @@ export default function AppPage() {
                     <CategoryIcon cat={w.category} />
                   </div>
                   <div>
-                    <h2 style={{ fontSize:'16px', fontWeight:800, margin:0, letterSpacing:'-0.02em' }}>{w.productName}</h2>
+                    <h2 style={{ fontSize:'16px', fontWeight:600, margin:0, letterSpacing:'-0.02em' }}>{w.productName}</h2>
                     {w.brand && <div style={{ fontSize:'12px', color:'#555', marginTop:'2px' }}>{w.brand}</div>}
                   </div>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:'5px', background:sBg, border:`1px solid ${sColor}22`, borderRadius:'20px', padding:'4px 10px' }}>
                     <div style={{ width:6, height:6, borderRadius:'50%', background:sColor }}></div>
-                    <span style={{ fontSize:'11px', fontWeight:700, color:sColor, textTransform:'uppercase', letterSpacing:'0.08em' }}>{status}</span>
+                    <span style={{ fontSize:'11px', fontWeight:600, color:sColor }}>{status}</span>
                   </div>
                   <button onClick={() => setShowViewModal(false)} style={{ background:'none', border:'1px solid #1e1e1e', borderRadius:'8px', color:'#555', cursor:'pointer', padding:'8px', lineHeight:0 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1158,26 +1118,26 @@ export default function AppPage() {
                   { label:'Retailer', value:w.retailer || 'N/A' },
                 ].map(({ label, value, color }) => (
                   <div key={label} style={{ background:'#0d0d0d', border:'1px solid #1a1a1a', borderRadius:'10px', padding:'12px' }}>
-                    <div style={{ fontSize:'10px', color:'#444', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'4px' }}>{label}</div>
+                    <div style={{ fontSize:'10px', color:'#444', fontWeight:600, marginBottom:'4px' }}>{label}</div>
                     <div style={{ fontSize:'13px', fontWeight:600, color: color || '#ccc' }}>{value}</div>
                   </div>
                 ))}
               </div>
               {w.serial && (
                 <div style={{ background:'#0d0d0d', border:'1px solid #1a1a1a', borderRadius:'10px', padding:'12px', marginBottom:'10px' }}>
-                  <div style={{ fontSize:'10px', color:'#444', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'4px' }}>Serial Number</div>
+                  <div style={{ fontSize:'10px', color:'#444', fontWeight:600, marginBottom:'4px' }}>Serial Number</div>
                   <div style={{ fontSize:'13px', fontFamily:'monospace', color:'#888' }}>{w.serial}</div>
                 </div>
               )}
               {w.notes && (
                 <div style={{ background:'#0d0d0d', border:'1px solid #1a1a1a', borderRadius:'10px', padding:'12px', marginBottom:'10px' }}>
-                  <div style={{ fontSize:'10px', color:'#444', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'4px' }}>Notes</div>
+                  <div style={{ fontSize:'10px', color:'#444', fontWeight:600, marginBottom:'4px' }}>Notes</div>
                   <div style={{ fontSize:'13px', color:'#888', lineHeight:'1.5' }}>{w.notes}</div>
                 </div>
               )}
               {w.receiptUrl && (
                 <div style={{ marginBottom:'10px' }}>
-                  <div style={{ fontSize:'10px', color:'#444', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'8px' }}>Receipt</div>
+                  <div style={{ fontSize:'10px', color:'#444', fontWeight:600, marginBottom:'8px' }}>Receipt</div>
                   {w.receiptType === 'image' ? (
                     <a href={w.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ display:'block', textDecoration:'none' }}>
                       <img src={w.receiptUrl} alt="Receipt" style={{ width:'100%', maxHeight:'200px', objectFit:'cover', borderRadius:'10px', border:'1px solid #2a2a2a', transition:'opacity 0.15s' }} onMouseOver={e=>e.target.style.opacity='0.85'} onMouseOut={e=>e.target.style.opacity='1'} />
@@ -1211,10 +1171,10 @@ export default function AppPage() {
       {showDeleteModal && (
         <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) { setShowDeleteModal(false); setPendingDeleteId(null); } }}>
           <div className="modal-box" style={{ maxWidth:'380px', width:'100%', textAlign:'center' }} onClick={e => e.stopPropagation()}>
-            <div style={{ width:48, height:48, borderRadius:'12px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', color:'#ef4444' }}>
+            <div style={{ width:48, height:48, borderRadius:'12px', background:'rgba(224,105,94,0.08)', border:'1px solid rgba(224,105,94,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', color:'#e0695e' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
-            <h3 style={{ fontSize:'16px', fontWeight:800, margin:'0 0 8px', letterSpacing:'-0.02em' }}>Delete Warranty?</h3>
+            <h3 style={{ fontSize:'16px', fontWeight:600, margin:'0 0 8px', letterSpacing:'-0.02em' }}>Delete Warranty?</h3>
             <p style={{ fontSize:'13px', color:'#555', margin:'0 0 24px', lineHeight:'1.5' }}>This action cannot be undone. The warranty will be permanently removed.</p>
             <div style={{ display:'flex', gap:'10px' }}>
               <button className="btn-ghost" style={{ flex:1 }} onClick={() => { setShowDeleteModal(false); setPendingDeleteId(null); }}>Cancel</button>
@@ -1226,102 +1186,95 @@ export default function AppPage() {
         </div>
       )}
 
-      {/* ── Notifications Modal ── */}
-      {showNotifModal && (
-        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowNotifModal(false); }}>
-          <div className="modal-box" style={{ maxWidth:'400px', width:'100%' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'24px' }}>
-              <div>
-                <h2 style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.03em', margin:0 }}>Notifications</h2>
-                <p style={{ fontSize:'12px', color:'#444', margin:'4px 0 0' }}>Expiry reminder preferences</p>
-              </div>
-              <button onClick={() => setShowNotifModal(false)} style={{ background:'none', border:'1px solid #1e1e1e', borderRadius:'8px', color:'#555', cursor:'pointer', padding:'8px', lineHeight:0 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            {/* Email notifications, not built yet */}
-            <div style={{ background:'#0f0f0f', border:'1px solid #1a1a1a', borderRadius:'12px', padding:'14px 16px', marginBottom:'12px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px', opacity:0.55 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
-                <div>
-                  <div style={{ fontSize:'13px', fontWeight:600, color:'#ccc' }}>Email Notifications</div>
-                  <div style={{ fontSize:'11px', color:'#444', marginTop:'2px' }}>Expiry reminders sent to your inbox</div>
-                </div>
-              </div>
-              <span style={{ flexShrink:0, padding:'5px 10px', borderRadius:'100px', border:'1px solid #2a2a2a', background:'#1a1a1a', color:'#777', fontSize:'10px', fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', whiteSpace:'nowrap' }}>Coming soon</span>
-            </div>
-            <div style={{ background:'#0f0f0f', border:'1px solid #1a1a1a', borderRadius:'12px', padding:'16px', marginBottom:'16px' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <div>
-                  <div style={{ fontSize:'14px', fontWeight:600, color:'#e0e0e0', marginBottom:'2px' }}>Enable Reminders</div>
-                  <div style={{ fontSize:'12px', color:'#444' }}>Remind me before warranties expire, once email is available</div>
-                </div>
-                <button
-                  className="toggle-track"
-                  style={{ background: notifPrefs.enabled ? '#fff' : '#1e1e1e' }}
-                  onClick={() => setNotifPrefs(p => ({ ...p, enabled: !p.enabled }))}
-                >
-                  <div className="toggle-thumb" style={{ transform: notifPrefs.enabled ? 'translateX(20px)' : 'translateX(2px)', background: notifPrefs.enabled ? '#000' : '#444' }}></div>
-                </button>
-              </div>
-            </div>
-            {notifPrefs.enabled && (
-              <div style={{ marginBottom:'16px' }}>
-                <label className="label">Notify me this many days before expiry</label>
-                <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
-                  {[7, 14, 30, 60, 90].map(d => (
-                    <button key={d} onClick={() => setSelectedDaysBefore(d)} style={{ padding:'8px 16px', borderRadius:'8px', border:`1px solid ${selectedDaysBefore===d ? '#fff' : '#1e1e1e'}`, background: selectedDaysBefore===d ? '#fff' : '#0f0f0f', color: selectedDaysBefore===d ? '#000' : '#666', fontSize:'13px', fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}>
-                      {d}d
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {expiringCount > 0 && (
-              <div style={{ background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'10px', padding:'12px 14px', marginBottom:'16px', fontSize:'13px', color:'#f59e0b' }}>
-                <strong>{expiringCount}</strong> warrant{expiringCount === 1 ? 'y' : 'ies'} expiring within {selectedDaysBefore} days
-              </div>
-            )}
-            <div style={{ display:'flex', gap:'10px', justifyContent:'flex-end', alignItems:'center' }}>
-              <button className="btn-ghost" onClick={() => setShowNotifModal(false)}>Cancel</button>
-              <button className="btn-primary" onClick={saveNotifPrefs} disabled={savingNotifPrefs}>
-                {savingNotifPrefs ? 'Saving…' : 'Save Preferences'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Settings Modal ── */}
+      {/* ── Settings (full-screen page) ── */}
       {showSettingsModal && (
-        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowSettingsModal(false); }}>
-          <div className="modal-box" style={{ maxWidth:'420px', width:'100%' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'24px' }}>
+        <div className="settings-page" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+          <MeshGradient className="app-glow" />
+          <form onSubmit={saveSettings} className="settings-inner">
+            <div className="settings-head rise">
               <div>
-                <h2 style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.03em', margin:0 }}>Settings</h2>
-                <p style={{ fontSize:'12px', color:'#444', margin:'4px 0 0' }}>Manage your account</p>
+                <h1 id="settings-title" className="app-title">Settings</h1>
+                <p style={{ fontSize:'15px', color:'var(--text-3)', marginTop:'8px' }}>Your account, reminders and plan.</p>
               </div>
-              <button onClick={() => setShowSettingsModal(false)} style={{ background:'none', border:'1px solid #1e1e1e', borderRadius:'8px', color:'#555', cursor:'pointer', padding:'8px', lineHeight:0 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <button type="button" className="icon-btn" aria-label="Close settings" onClick={() => setShowSettingsModal(false)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            <form onSubmit={saveSettings}>
-              <div style={{ marginBottom:'16px' }}>
-                <label className="label">Display Name</label>
-                <input className="input-field" type="text" placeholder="Your name" value={settingsForm.name} onChange={e => setSettingsForm(p => ({...p, name:e.target.value}))} />
+
+            <section className="settings-section rise" style={{ animationDelay:'60ms' }}>
+              <div className="settings-label">
+                <h2>Profile</h2>
+                <p>How you appear in Assure.</p>
               </div>
-              <div style={{ marginBottom:'16px' }}>
-                <label className="label">Email</label>
-                <input className="input-field" type="email" value={displayEmail} disabled style={{ opacity:0.5, cursor:'not-allowed' }} />
+              <div className="settings-fields">
+                <div>
+                  <label className="label" htmlFor="settings-name">Name</label>
+                  <input id="settings-name" className="input-field" type="text" placeholder="Your name" value={settingsForm.name} onChange={e => setSettingsForm(p => ({...p, name:e.target.value}))} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="settings-email">Email</label>
+                  <input id="settings-email" className="input-field" type="email" value={displayEmail} disabled style={{ opacity:0.55, cursor:'not-allowed' }} />
+                </div>
               </div>
-              <div style={{ display:'flex', gap:'10px', justifyContent:'flex-end', marginTop:'24px' }}>
-                <button type="button" className="btn-ghost" onClick={() => setShowSettingsModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary" disabled={savingSettings}>
-                  {savingSettings ? 'Saving…' : 'Save Changes'}
-                </button>
+            </section>
+
+            <section className="settings-section rise" style={{ animationDelay:'120ms' }}>
+              <div className="settings-label">
+                <h2>Notifications</h2>
+                <p>Expiry reminders are always on.</p>
               </div>
-            </form>
-          </div>
+              <div className="settings-fields">
+                <div>
+                  <span className="label">Remind me this many days before a warranty expires</span>
+                  <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
+                    {[7, 14, 30, 60, 90].map(d => (
+                      <button type="button" key={d} onClick={() => setSelectedDaysBefore(d)} className={`filter-pill tnum${selectedDaysBefore === d ? ' active' : ''}`} aria-pressed={selectedDaysBefore === d}>
+                        {d} days
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="settings-note">
+                  <span>Email reminders</span>
+                  <span className="tag">Coming soon</span>
+                </div>
+                {expiringCount > 0 && (
+                  <div className="tnum" style={{ fontSize:'14px', color:'var(--warn)' }}>
+                    {expiringCount} warrant{expiringCount === 1 ? 'y expires' : 'ies expire'} within 30 days.
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="settings-section rise" style={{ animationDelay:'180ms' }}>
+              <div className="settings-label">
+                <h2>Plan</h2>
+                <p>Free plan. Scans and claim sessions reset on the 1st of each month.</p>
+              </div>
+              <div className="settings-fields">
+                {[
+                  { label:'Receipt scans', used:scanUsed, limit:SCAN_LIMIT },
+                  { label:'Claim sessions', used:claimUsed, limit:CLAIM_LIMIT },
+                ].map(m => (
+                  <div key={m.label}>
+                    <div className="tnum" style={{ display:'flex', justifyContent:'space-between', fontSize:'14px', marginBottom:'8px' }}>
+                      <span style={{ color:'var(--text-2)' }}>{m.label}</span>
+                      <span>{m.used} of {m.limit}</span>
+                    </div>
+                    <div className="progress-bar"><div className="progress-fill" style={{ width:`${Math.min((m.used / Math.max(m.limit, 1)) * 100, 100)}%`, background: m.used >= m.limit ? 'var(--bad)' : 'var(--text)' }} /></div>
+                  </div>
+                ))}
+                <a href="/pricing" style={{ fontSize:'14px', color:'var(--text)', textUnderlineOffset:'3px' }}>See plans</a>
+              </div>
+            </section>
+
+            <div className="settings-actions">
+              <button type="button" className="btn-ghost" onClick={() => setShowSettingsModal(false)}>Cancel</button>
+              <button type="submit" className="btn-primary" disabled={savingSettings}>
+                {savingSettings ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
@@ -1337,7 +1290,7 @@ export default function AppPage() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 </div>
                 <div>
-                  <div style={{ fontSize:'14px', fontWeight:800, letterSpacing:'-0.02em', color:'#f0f0f0' }}>Claim Assistant</div>
+                  <div style={{ fontSize:'14px', fontWeight:600, letterSpacing:'-0.02em', color:'#f0f0f0' }}>Claim Assistant</div>
                   <div style={{ fontSize:'11px', color:'#444', marginTop:'1px' }}>{claimWarranty.productName}</div>
                 </div>
               </div>
@@ -1379,12 +1332,12 @@ export default function AppPage() {
             {/* Input row */}
             {claimLocked || claimSessionFull ? (
               <div style={{ padding:'16px 20px', borderTop:'1px solid #1a1a1a', background:'#0d0d0d', flexShrink:0, textAlign:'center' }}>
-                <div style={{ display:'inline-flex', alignItems:'center', gap:'8px', background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.15)', borderRadius:'10px', padding:'10px 16px' }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  <span style={{ fontSize:'12px', color:'#ef4444', fontWeight:600 }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:'8px', background:'rgba(224,105,94,0.06)', border:'1px solid rgba(224,105,94,0.15)', borderRadius:'10px', padding:'10px 16px' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e0695e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span style={{ fontSize:'12px', color:'#e0695e', fontWeight:600 }}>
                     {claimSessionFull
                       ? `This claim session has reached its ${CLAIM_MESSAGES} message limit.`
-                      : `You have used your free trial claim session (${claimUsed}/${CLAIM_LIMIT}).`}
+                      : `You have used this month's claim session${CLAIM_LIMIT === 1 ? '' : 's'} (${claimUsed}/${CLAIM_LIMIT}). More on the 1st.`}
                   </span>
                 </div>
               </div>
@@ -1397,14 +1350,14 @@ export default function AppPage() {
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendClaimMessage(); } }}
                     placeholder="Describe your issue or ask for a claim letter…"
                     rows={2}
-                    style={{ flex:1, background:'#141414', border:'1px solid #242424', borderRadius:'10px', color:'#fff', padding:'10px 14px', fontSize:'13px', outline:'none', resize:'none', fontFamily:'Inter, sans-serif', lineHeight:'1.5', transition:'border-color 0.15s' }}
-                    onFocus={e => e.target.style.borderColor='#4361ee'}
+                    style={{ flex:1, background:'#141414', border:'1px solid #242424', borderRadius:'10px', color:'#fff', padding:'10px 14px', fontSize:'13px', outline:'none', resize:'none', lineHeight:'1.5', transition:'border-color 0.15s' }}
+                    onFocus={e => e.target.style.borderColor='#6f6c65'}
                     onBlur={e => e.target.style.borderColor='#242424'}
                   />
                   <button
                     onClick={sendClaimMessage}
                     disabled={claimLoading || !claimInput.trim()}
-                    style={{ background:'#4361ee', color:'#fff', border:'none', borderRadius:'10px', padding:'10px 16px', fontSize:'13px', fontWeight:800, cursor: claimLoading || !claimInput.trim() ? 'not-allowed' : 'pointer', opacity: claimLoading || !claimInput.trim() ? 0.4 : 1, transition:'all 0.15s', fontFamily:'Inter, sans-serif', height:'46px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    style={{ background:'#f2f0ec', color:'#0b0b0a', border:'none', borderRadius:'10px', padding:'10px 16px', fontSize:'13px', fontWeight:600, cursor: claimLoading || !claimInput.trim() ? 'not-allowed' : 'pointer', opacity: claimLoading || !claimInput.trim() ? 0.4 : 1, transition:'all 0.15s', height:'46px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   </button>
                 </div>
@@ -1430,11 +1383,11 @@ export default function AppPage() {
       <button
         type="button"
         onClick={() => { setClaimPickerSearch(''); setShowClaimPicker(true); }}
-        style={{ position:'fixed', bottom:'28px', right:'28px', zIndex:200, display:'flex', alignItems:'center', gap:'9px', background:'#4361ee', border:'none', borderRadius:'14px', color:'#fff', fontSize:'13px', fontWeight:700, padding:'13px 20px', cursor:'pointer', boxShadow:'0 4px 24px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.15)', transition:'all 0.2s', fontFamily:'Inter, sans-serif', letterSpacing:'0.01em' }}
+        style={{ position:'fixed', bottom:'28px', right:'28px', zIndex:200, display:'flex', alignItems:'center', gap:'9px', background:'#f2f0ec', border:'none', borderRadius:'999px', color:'#0b0b0a', fontSize:'14px', fontWeight:500, padding:'12px 20px', cursor:'pointer', boxShadow:'0 4px 24px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.15)', transition:'all 0.2s' }}
         onMouseOver={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)'; }}
         onMouseOut={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 4px 24px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.15)'; }}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        File a Claim
+        <MessageText1 size={16} color="currentColor" />
+        File a claim
       </button>
 
       {/* ── Claim Product Picker Modal ── */}
@@ -1445,7 +1398,7 @@ export default function AppPage() {
             {/* Header */}
             <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid #1a1a1a', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <div>
-                <div style={{ fontSize:'16px', fontWeight:800, letterSpacing:'-0.02em', color:'#f0f0f0' }}>File a Claim</div>
+                <div style={{ fontSize:'16px', fontWeight:600, letterSpacing:'-0.02em', color:'#f0f0f0' }}>File a Claim</div>
                 <div style={{ fontSize:'12px', color:'#444', marginTop:'3px' }}>Choose a product to get started</div>
               </div>
               <button onClick={() => setShowClaimPicker(false)} style={{ background:'none', border:'1px solid #1e1e1e', borderRadius:'8px', color:'#555', cursor:'pointer', padding:'7px', lineHeight:0 }}>
@@ -1463,7 +1416,7 @@ export default function AppPage() {
                   value={claimPickerSearch}
                   onChange={e => setClaimPickerSearch(e.target.value)}
                   autoFocus
-                  style={{ width:'100%', background:'#111', border:'1px solid #222', borderRadius:'8px', color:'#ddd', padding:'9px 12px 9px 34px', fontSize:'13px', outline:'none', fontFamily:'Inter, sans-serif', boxSizing:'border-box' }}
+                  style={{ width:'100%', background:'#111', border:'1px solid #222', borderRadius:'8px', color:'#ddd', padding:'9px 12px 9px 34px', fontSize:'13px', outline:'none', boxSizing:'border-box' }}
                 />
               </div>
             </div>
@@ -1490,7 +1443,7 @@ export default function AppPage() {
                       key={w.id}
                       type="button"
                       onClick={() => { setShowClaimPicker(false); openClaimModal(w); }}
-                      style={{ width:'100%', display:'flex', alignItems:'center', gap:'14px', padding:'14px 20px', background:'transparent', border:'none', borderBottom:'1px solid #111', cursor:'pointer', textAlign:'left', transition:'background 0.12s', fontFamily:'Inter, sans-serif' }}
+                      style={{ width:'100%', display:'flex', alignItems:'center', gap:'14px', padding:'14px 20px', background:'transparent', border:'none', borderBottom:'1px solid #111', cursor:'pointer', textAlign:'left', transition:'background 0.12s' }}
                       onMouseOver={e => e.currentTarget.style.background='#111'}
                       onMouseOut={e => e.currentTarget.style.background='transparent'}>
                       {/* Category icon box */}
@@ -1499,14 +1452,14 @@ export default function AppPage() {
                       </div>
                       {/* Name + brand */}
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:'13px', fontWeight:700, color:'#e0e0e0', letterSpacing:'-0.01em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{w.productName}</div>
+                        <div style={{ fontSize:'13px', fontWeight:600, color:'#e0e0e0', letterSpacing:'-0.01em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{w.productName}</div>
                         {w.brand && <div style={{ fontSize:'11px', color:'#555', marginTop:'1px' }}>{w.brand}</div>}
                       </div>
                       {/* Status + days */}
                       <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'3px', flexShrink:0 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:'4px', background:`${sColor}14`, border:`1px solid ${sColor}28`, borderRadius:'20px', padding:'3px 8px' }}>
                           <div style={{ width:4, height:4, borderRadius:'50%', background:sColor }} />
-                          <span style={{ fontSize:'9px', fontWeight:700, color:sColor, textTransform:'uppercase', letterSpacing:'0.08em' }}>{st}</span>
+                          <span style={{ fontSize:'9px', fontWeight:600, color:sColor }}>{st}</span>
                         </div>
                         <div style={{ fontSize:'10px', fontWeight:600, color:'#555' }}>
                           {days < 0 ? `${Math.abs(days)}d ago` : `${days}d left`}

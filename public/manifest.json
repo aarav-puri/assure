@@ -1,11 +1,11 @@
 {
-  "name": "ASSURE",
-  "short_name": "ASSURE",
-  "description": "Track and manage all your product warranties in one place.",
+  "name": "Assure",
+  "short_name": "Assure",
+  "description": "Keep every warranty you own in one place, see what expires next, and get help filing a claim.",
   "start_url": "/app",
   "display": "standalone",
-  "background_color": "#080808",
-  "theme_color": "#080808",
+  "background_color": "#0b0b0a",
+  "theme_color": "#0b0b0a",
   "orientation": "portrait-primary",
   "icons": [
     {
