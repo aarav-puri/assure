@@ -1194,7 +1194,6 @@ export default function AppPage() {
             <div className="settings-head rise">
               <div>
                 <h1 id="settings-title" className="app-title">Settings</h1>
-                <p style={{ fontSize:'15px', color:'var(--text-3)', marginTop:'8px' }}>Your account, reminders and plan.</p>
               </div>
               <button type="button" className="icon-btn" aria-label="Close settings" onClick={() => setShowSettingsModal(false)}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1204,7 +1203,6 @@ export default function AppPage() {
             <section className="settings-section rise" style={{ animationDelay:'60ms' }}>
               <div className="settings-label">
                 <h2>Profile</h2>
-                <p>How you appear in Assure.</p>
               </div>
               <div className="settings-fields">
                 <div>
@@ -1221,7 +1219,6 @@ export default function AppPage() {
             <section className="settings-section rise" style={{ animationDelay:'120ms' }}>
               <div className="settings-label">
                 <h2>Notifications</h2>
-                <p>Expiry reminders are always on.</p>
               </div>
               <div className="settings-fields">
                 <div>
@@ -1249,7 +1246,6 @@ export default function AppPage() {
             <section className="settings-section rise" style={{ animationDelay:'180ms' }}>
               <div className="settings-label">
                 <h2>Plan</h2>
-                <p>Free plan. Scans and claim sessions reset on the 1st of each month.</p>
               </div>
               <div className="settings-fields">
                 {[
