@@ -95,7 +95,7 @@ export async function POST(request) {
       if (started.blocked) {
         return NextResponse.json(
           {
-            error: `You have used this month's claim session${CLAIM_LIMIT === 1 ? '' : 's'} (${started.used}/${CLAIM_LIMIT}). More on the 1st.`,
+            error: `You have used this month's claim session${CLAIM_LIMIT === 1 ? '' : 's'}.`,
             code: 'allowance_used',
           },
           { status: 429 }

@@ -7,6 +7,7 @@ import { ENFORCED_PLAN } from '@/lib/plans';
 import { Monitor, Home2, Car, Ruler, Bag2, Brush, Lamp, Activity, Box, Add, ArrowDown2, SearchNormal1, Element3, RowVertical, Edit2, Setting2, Logout, MessageText1 } from 'iconsax-reactjs';
 import { LogoMark } from '@/components/Logo';
 import MeshGradient from '@/components/MeshGradient';
+import VoiceWave from '@/components/VoiceWave';
 import { WordReveal, DominoName, NumberTicker, SpotlightCard } from '@/components/motion';
 // ── downscale image for AI scan (Vercel Functions cap request bodies at 4.5MB) ─
 async function resizeImageForScan(file, maxDimension = 1600, quality = 0.8) {
@@ -146,6 +147,7 @@ export default function AppPage() {
   // ── AI receipt scan ────────────────────────────────────────────────────────
   const [scanLoading, setScanLoading] = useState(false);
   const [scanUsed, setScanUsed] = useState(0);
+  const [voiceSecondsUsed, setVoiceSecondsUsed] = useState(0);
 
   // ── AI claim assistant ─────────────────────────────────────────────────────
   const [claimUsed, setClaimUsed] = useState(0);
@@ -170,6 +172,20 @@ export default function AppPage() {
   const [claimMessages, setClaimMessages] = useState([]);
   const [claimInput, setClaimInput] = useState('');
   const [claimLoading, setClaimLoading] = useState(false);
+  // Voice input: 'idle' | 'recording' | 'transcribing'
+  const [voiceState, setVoiceState] = useState('idle');
+  const recorderRef = useRef(null);
+  const voiceTimerRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const elapsedTimerRef = useRef(null);
+  const revealTimerRef = useRef(null);
+  const claimInputRef = useRef('');
+  const claimTextareaRef = useRef(null);
+  claimInputRef.current = claimInput; // read from the recorder's async callback
+  const [voiceAnalyser, setVoiceAnalyser] = useState(null); // drives the dot-grid visualizer
+  const [voiceElapsed, setVoiceElapsed] = useState(0);
+  // Just-transcribed words, shown blurring into focus over the text box.
+  const [voiceReveal, setVoiceReveal] = useState(null); // { base, words } | null
 
 
   // ── Refs ───────────────────────────────────────────────────────────────────
@@ -283,6 +299,7 @@ export default function AppPage() {
           setSettingsForm({ name: profile.name || data.user.name || '', password: '' });
           setScanUsed(usage.scan || 0);
           setClaimUsed(usage.claim || 0);
+          setVoiceSecondsUsed(usage.voice || 0);
           if (serverLimits) setLimits(serverLimits);
         }
       } catch (err) {
@@ -397,6 +414,164 @@ export default function AppPage() {
     setClaimFull(false);
     setShowClaimModal(true);
   };
+
+  // ── Voice input (speech to text via /api/transcribe) ─────────────────────────────
+  const MAX_RECORDING_MS = 120000;
+
+  // Close the level meter and elapsed clock. The recording itself is handled separately.
+  const teardownVoiceAudio = () => {
+    clearInterval(elapsedTimerRef.current);
+    clearTimeout(voiceTimerRef.current);
+    audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
+    setVoiceAnalyser(null);
+  };
+
+  const stopVoice = () => {
+    const rec = recorderRef.current;
+    if (rec && rec.state !== 'inactive') rec.stop();
+  };
+
+  const cancelVoice = () => {
+    const rec = recorderRef.current;
+    if (rec) {
+      rec.onstop = null;
+      if (rec.state !== 'inactive') rec.stop();
+      rec.stream.getTracks().forEach(t => t.stop());
+    }
+    teardownVoiceAudio();
+    clearTimeout(revealTimerRef.current);
+    setVoiceReveal(null);
+    recorderRef.current = null;
+    setVoiceState('idle');
+  };
+
+  const startVoice = async () => {
+    if (voiceState !== 'idle') return;
+    if (voiceSecondsUsed >= limits.voiceMinutes * 60) {
+      showToast(`You have used this month's ${limits.voiceMinutes} minutes of voice input.`, 'error');
+      return;
+    }
+    if (typeof window === 'undefined' || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      showToast('Voice input is not supported in this browser.', 'error');
+      return;
+    }
+    // Create the level meter's AudioContext now, while still inside the click.
+    // Made after the permission prompt, Chrome starts it suspended, and a
+    // suspended meter reads pure silence.
+    let ctx = null;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      ctx = new AC();
+      ctx.resume().catch(() => {});
+    } catch { ctx = null; }
+
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      ctx?.close().catch(() => {});
+      showToast('Microphone access was blocked.', 'error');
+      return;
+    }
+    // Prefer an explicit codec where supported; Safari records MP4.
+    const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus'].find(t => MediaRecorder.isTypeSupported(t));
+    let rec;
+    try {
+      rec = new MediaRecorder(stream, { ...(mimeType ? { mimeType } : {}), audioBitsPerSecond: 32000 });
+    } catch {
+      stream.getTracks().forEach(t => t.stop());
+      ctx?.close().catch(() => {});
+      showToast('Could not start microphone recording. Try another browser.', 'error');
+      return;
+    }
+    const chunks = [];
+    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      teardownVoiceAudio();
+      recorderRef.current = null;
+      const type = rec.mimeType || chunks[0]?.type || mimeType || 'audio/webm';
+      const blob = new Blob(chunks, { type });
+      if (!blob.size) {
+        setVoiceState('idle');
+        showToast('The microphone produced an empty recording. Check your input device and try again.', 'error');
+        return;
+      }
+      // Every recording is sent: the model returns empty text for silence, so it
+      // is the judge of whether anything was said (a browser-side level check
+      // proved unreliable across browsers and mics).
+      setVoiceState('transcribing');
+      try {
+        const res = await fetch('/api/transcribe', { method: 'POST', headers: { 'Content-Type': type }, body: blob });
+        const json = await res.json();
+        if (typeof json.voiceSeconds === 'number') setVoiceSecondsUsed(json.voiceSeconds);
+        if (!res.ok) throw new Error(json.error || 'Could not transcribe that recording.');
+        if (typeof json.text !== 'string') throw new Error('The transcription service returned an invalid response. Please try again.');
+        if (json.text.trim()) {
+          const base = claimInputRef.current.trim() ? `${claimInputRef.current.trimEnd()} ` : '';
+          setClaimInput(base + json.text);
+          // Words blur into focus one after another, then the plain text box takes over.
+          const words = json.text.split(/(\s+)/);
+          clearTimeout(revealTimerRef.current);
+          setVoiceReveal({ base, words });
+          revealTimerRef.current = setTimeout(() => setVoiceReveal(null), 500 + words.length * 18);
+        } else {
+          showToast('No speech was returned for this recording. Check that your browser is using the right microphone.', 'info');
+        }
+      } catch (err) {
+        showToast(err.message || 'Could not transcribe that recording.', 'error');
+      } finally {
+        setVoiceState('idle');
+      }
+    };
+    // A level meter on the same stream feeds the visualizer. It is optional:
+    // recording still works without an AudioContext.
+    try {
+      if (!ctx) throw new Error('no AudioContext');
+      if (ctx.state !== 'running') ctx.resume().catch(() => {});
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.75;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      audioCtxRef.current = ctx;
+      setVoiceAnalyser(analyser);
+    } catch {
+      ctx?.close().catch(() => {});
+      /* visualizer falls back to its resting shape */
+    }
+
+    recorderRef.current = rec;
+    rec.onerror = () => {
+      cancelVoice();
+      showToast('Microphone recording failed. Check your input device and try again.', 'error');
+    };
+    try {
+      rec.start();
+    } catch {
+      cancelVoice();
+      showToast('Could not start microphone recording. Please try again.', 'error');
+      return;
+    }
+    setVoiceState('recording');
+    setVoiceElapsed(0);
+    const startedAt = Date.now();
+    elapsedTimerRef.current = setInterval(() => setVoiceElapsed(Math.floor((Date.now() - startedAt) / 1000)), 250);
+    voiceTimerRef.current = setTimeout(stopVoice, MAX_RECORDING_MS);
+  };
+
+  // Grow the message box with its text (up to about five lines), so a long
+  // transcript is visible instead of hidden behind a scrollbar.
+  useEffect(() => {
+    const el = claimTextareaRef.current;
+    if (!el) return;
+    if (voiceState !== 'idle') { el.style.height = ''; return; } // let rows size it for the visualizer
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 124)}px`;
+  }, [claimInput, voiceState, showClaimModal]);
+
+  // Release the microphone if the modal closes mid-recording.
+  useEffect(() => { if (!showClaimModal) cancelVoice(); }, [showClaimModal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendClaimMessage = async () => {
     if (!claimInput.trim() || claimLoading || !claimWarranty) return;
@@ -760,7 +935,10 @@ export default function AppPage() {
             {userMenuOpen && (
               <div style={{ position:'absolute', top:'calc(100% + 8px)', right:0, background:'#0f0f0f', border:'1px solid #1e1e1e', borderRadius:'12px', padding:'8px', minWidth:'200px', boxShadow:'0 16px 48px rgba(0,0,0,0.6)', zIndex:200 }}>
                 <div style={{ padding:'8px 12px 12px', borderBottom:'1px solid #1a1a1a', marginBottom:'8px' }}>
-                  <div style={{ fontSize:'13px', fontWeight:600, color:'#e0e0e0' }}>{displayName}</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                    <span style={{ fontSize:'13px', fontWeight:600, color:'#e0e0e0', minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{displayName}</span>
+                    <span style={{ flexShrink:0, fontSize:'10px', fontWeight:600, lineHeight:1, color:'#d8d6d1', background:'#1c1c1c', border:'1px solid #2c2c2c', borderRadius:'999px', padding:'3px 8px' }}>{ENFORCED_PLAN.name}</span>
+                  </div>
                   <div style={{ fontSize:'11px', color:'#444', marginTop:'2px' }}>{displayEmail}</div>
                   {/* AI usage */}
                   <div style={{ marginTop:'10px', background:'#161616', border:'1px solid #1e1e1e', borderRadius:'8px', padding:'8px 10px', display:'flex', flexDirection:'column', gap:'8px' }}>
@@ -794,7 +972,6 @@ export default function AppPage() {
                         <div style={{ height:'100%', borderRadius:'2px', width:`${Math.min((claimUsed / CLAIM_LIMIT) * 100, 100)}%`, background: claimUsed >= CLAIM_LIMIT ? '#e0695e' : claimUsed >= CLAIM_LIMIT - 1 ? '#e3ad55' : '#6cc08f', transition:'width 0.3s ease' }} />
                       </div>
                     </div>
-                    <div style={{ fontSize:'10px', color:'#333' }}>Free plan, resets on the 1st</div>
                   </div>
                 </div>
                 <button onClick={() => { setSelectedDaysBefore(notifPrefs.daysBefore || 30); setSettingsForm(p => ({ ...p, name: userProfile?.name || p.name })); setShowSettingsModal(true); setUserMenuOpen(false); }} style={{ display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'9px 12px', background:'none', border:'none', color:'#888', fontSize:'13px', cursor:'pointer', borderRadius:'7px', transition:'all 0.15s', textAlign:'left' }} onMouseOver={e=>e.currentTarget.style.background='#161616'} onMouseOut={e=>e.currentTarget.style.background='none'}>
@@ -1251,6 +1428,7 @@ export default function AppPage() {
                 {[
                   { label:'Receipt scans', used:scanUsed, limit:SCAN_LIMIT },
                   { label:'Claim sessions', used:claimUsed, limit:CLAIM_LIMIT },
+                  { label:'Voice minutes', used:Math.ceil(voiceSecondsUsed / 60), limit:limits.voiceMinutes },
                 ].map(m => (
                   <div key={m.label}>
                     <div className="tnum" style={{ display:'flex', justifyContent:'space-between', fontSize:'14px', marginBottom:'8px' }}>
@@ -1333,27 +1511,78 @@ export default function AppPage() {
                   <span style={{ fontSize:'12px', color:'#e0695e', fontWeight:600 }}>
                     {claimSessionFull
                       ? `This claim session has reached its ${CLAIM_MESSAGES} message limit.`
-                      : `You have used this month's claim session${CLAIM_LIMIT === 1 ? '' : 's'} (${claimUsed}/${CLAIM_LIMIT}). More on the 1st.`}
+                      : `You have used this month's claim session${CLAIM_LIMIT === 1 ? '' : 's'}.`}
                   </span>
                 </div>
               </div>
             ) : (
               <div style={{ padding:'12px 16px', borderTop:'1px solid #1a1a1a', display:'flex', flexDirection:'column', gap:'6px', flexShrink:0, background:'#0d0d0d' }}>
                 <div style={{ display:'flex', gap:'8px', alignItems:'flex-end' }}>
-                  <textarea
-                    value={claimInput}
-                    onChange={e => setClaimInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendClaimMessage(); } }}
-                    placeholder="Describe your issue or ask for a claim letter…"
-                    rows={2}
-                    style={{ flex:1, background:'#141414', border:'1px solid #242424', borderRadius:'10px', color:'#fff', padding:'10px 14px', fontSize:'13px', outline:'none', resize:'none', lineHeight:'1.5', transition:'border-color 0.15s' }}
-                    onFocus={e => e.target.style.borderColor='#6f6c65'}
-                    onBlur={e => e.target.style.borderColor='#242424'}
-                  />
+                  {/* Composer: text box with the voice visualizer, status and mic inside it */}
+                  <div className="voice-composer" data-voice={voiceState} style={{ position:'relative', flex:1, minWidth:0, background:'#141414', border:'1px solid #242424', borderRadius:'12px', overflow:'hidden', transition:'border-color 0.15s' }}>
+                    <textarea
+                      ref={claimTextareaRef}
+                      value={claimInput}
+                      onChange={e => setClaimInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendClaimMessage(); } }}
+                      placeholder={voiceState === 'recording' ? 'Listening…' : voiceState === 'transcribing' ? '' : 'Describe your issue, or tap the mic and speak'}
+                      readOnly={voiceState !== 'idle'}
+                      rows={voiceState === 'idle' ? 1 : 3}
+                      aria-label="Message"
+                      className="voice-textarea"
+                      style={{ display:'block', width:'100%', background:'transparent', border:'none', color: voiceReveal ? 'transparent' : '#fff', caretColor:'#fff', padding:'12px 52px 12px 14px', fontSize:'13px', outline:'none', resize:'none', lineHeight:'1.5' }}
+                    />
+
+                    {/* Just-transcribed words blurring into focus, laid exactly over the text */}
+                    {voiceReveal && (
+                      <div aria-hidden="true" style={{ position:'absolute', inset:0, padding:'12px 52px 12px 14px', fontSize:'13px', lineHeight:'1.5', color:'#fff', whiteSpace:'pre-wrap', wordBreak:'break-word', pointerEvents:'none' }}>
+                        {voiceReveal.base}
+                        {voiceReveal.words.map((w, i) => (
+                          <span key={i} className="voice-word" style={{ animationDelay:`${i * 18}ms` }}>{w}</span>
+                        ))}
+                      </div>
+                    )}
+
+                    {voiceState !== 'idle' && <VoiceWave analyser={voiceAnalyser} mode={voiceState} height={70} gridHeight={42} />}
+
+                    {/* Status: live timer while listening, "transcribing" while Whisper works */}
+                    {voiceState !== 'idle' && (
+                      <div className="tnum" aria-live="polite" style={{ position:'absolute', top:'11px', right:'14px', display:'flex', alignItems:'center', gap:'6px', fontSize:'11px', color:'#8a8780', pointerEvents:'none' }}>
+                        <span className="voice-rec-dot" style={{ width:5, height:5, borderRadius:'50%', background:'#f0f0f0' }} />
+                        {voiceState === 'recording'
+                          ? `${Math.floor(voiceElapsed / 60)}:${String(voiceElapsed % 60).padStart(2, '0')}`
+                          : 'transcribing'}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      className="voice-btn"
+                      onClick={voiceState === 'recording' ? stopVoice : startVoice}
+                      disabled={voiceState === 'transcribing' || claimLoading}
+                      aria-label={voiceState === 'recording' ? 'Stop recording' : voiceState === 'transcribing' ? 'Transcribing' : 'Speak your message'}
+                      aria-pressed={voiceState === 'recording'}
+                      title={voiceState === 'recording' ? 'Stop recording' : 'Speak your message'}
+                      style={{
+                        position:'absolute', right:'7px', bottom:'7px',
+                        width:'30px', height:'30px', borderRadius:'50%',
+                        background:'#262626', color:'#e8e6e1', border:'1px solid #333',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        cursor: claimLoading ? 'not-allowed' : voiceState === 'transcribing' ? 'default' : 'pointer',
+                        opacity: voiceState === 'transcribing' || (claimLoading && voiceState === 'idle') ? 0.4 : 1,
+                        boxShadow:'0 2px 10px rgba(0,0,0,0.45)',
+                      }}>
+                      {voiceState === 'recording' ? (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>
+                      ) : (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+                      )}
+                    </button>
+                  </div>
                   <button
                     onClick={sendClaimMessage}
                     disabled={claimLoading || !claimInput.trim()}
-                    style={{ background:'#f2f0ec', color:'#0b0b0a', border:'none', borderRadius:'10px', padding:'10px 16px', fontSize:'13px', fontWeight:600, cursor: claimLoading || !claimInput.trim() ? 'not-allowed' : 'pointer', opacity: claimLoading || !claimInput.trim() ? 0.4 : 1, transition:'all 0.15s', height:'46px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    style={{ background:'#f2f0ec', color:'#0b0b0a', border:'none', borderRadius:'12px', padding:'10px 16px', fontSize:'13px', fontWeight:600, cursor: claimLoading || !claimInput.trim() ? 'not-allowed' : 'pointer', opacity: claimLoading || !claimInput.trim() ? 0.4 : 1, transition:'all 0.15s', height:'46px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   </button>
                 </div>
@@ -1431,9 +1660,6 @@ export default function AppPage() {
                   <div style={{ padding:'40px 20px', textAlign:'center', color:'#444', fontSize:'13px' }}>No warranties found.</div>
                 );
                 return list.map(w => {
-                  const st = getStatus(w);
-                  const sColor = statusColor[st];
-                  const days = daysRemaining(w.expiryDate);
                   return (
                     <button
                       key={w.id}
@@ -1451,16 +1677,6 @@ export default function AppPage() {
                         <div style={{ fontSize:'13px', fontWeight:600, color:'#e0e0e0', letterSpacing:'-0.01em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{w.productName}</div>
                         {w.brand && <div style={{ fontSize:'11px', color:'#555', marginTop:'1px' }}>{w.brand}</div>}
                       </div>
-                      {/* Status + days */}
-                      <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'3px', flexShrink:0 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:'4px', background:`${sColor}14`, border:`1px solid ${sColor}28`, borderRadius:'20px', padding:'3px 8px' }}>
-                          <div style={{ width:4, height:4, borderRadius:'50%', background:sColor }} />
-                          <span style={{ fontSize:'9px', fontWeight:600, color:sColor }}>{st}</span>
-                        </div>
-                        <div style={{ fontSize:'10px', fontWeight:600, color:'#555' }}>
-                          {days < 0 ? `${Math.abs(days)}d ago` : `${days}d left`}
-                        </div>
-                      </div>
                       {/* Arrow */}
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}><polyline points="9 18 15 12 9 6"/></svg>
                     </button>
@@ -1475,6 +1691,19 @@ export default function AppPage() {
       <style jsx>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes dotBounce { 0%,80%,100% { transform: scale(0.6); opacity:0.4; } 40% { transform: scale(1); opacity:1; } }
+        .voice-composer:focus-within { border-color: #6f6c65 !important; }
+        .voice-textarea::placeholder { color: #6a6760; }
+        .voice-btn { transition: transform 0.15s ease, background 0.15s ease; }
+        .voice-btn:not(:disabled):hover { background: #2e2e2e !important; transform: scale(1.04); }
+        .voice-btn:focus-visible { outline: 2px solid #f0f0f0; outline-offset: 2px; }
+        .voice-word { display: inline; animation: voiceWordIn 0.45s cubic-bezier(.2,.7,.2,1) both; }
+        @keyframes voiceWordIn { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: blur(0); } }
+        .voice-rec-dot { animation: voiceDot 1.4s ease-in-out infinite; }
+        @keyframes voiceDot { 50% { opacity: 0.35; } }
+        @media (prefers-reduced-motion: reduce) {
+          .voice-word, .voice-rec-dot { animation: none; }
+          .voice-btn:not(:disabled):hover { transform: none; }
+        }
       `}</style>
     </div>
   );
