@@ -41,7 +41,7 @@ export default function PlanCard({ plan, available = true, current = false, href
         {plan.interval && <span style={{ fontSize: 15, color: 'var(--ink-3)' }}>per {plan.interval}</span>}
       </div>
       <div style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 28 }}>
-        {isFree ? '\u00a0' : (available ? 'Billed monthly.' : 'Not available to buy yet.')}
+        {isFree || !available ? '\u00a0' : 'Billed monthly.'}
       </div>
 
       {available ? (
