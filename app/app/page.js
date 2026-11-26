@@ -1258,25 +1258,25 @@ export default function AppPage() {
         return (
           <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
             <div className="modal-box" style={{ maxWidth:'500px', width:'100%' }} onClick={e => e.stopPropagation()}>
-              <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'20px' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-                  <div style={{ width:40, height:40, borderRadius:'10px', background:'#161616', border:'1px solid #252525', display:'flex', alignItems:'center', justifyContent:'center', color:'#666' }}>
-                    <CategoryIcon cat={w.category} />
+              <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'12px', marginBottom:'20px' }}>
+                <div style={{ display:'flex', alignItems:'flex-start', gap:'12px', flex:1, minWidth:0 }}>
+                  <div style={{ width:40, height:40, flexShrink:0, borderRadius:'10px', background:'#161616', border:'1px solid #252525', display:'flex', alignItems:'center', justifyContent:'center', color:'#666' }}>
+                    <CategoryIcon cat={w.category} size={18} />
                   </div>
-                  <div>
-                    <h2 style={{ fontSize:'16px', fontWeight:600, margin:0, letterSpacing:'-0.02em' }}>{w.productName}</h2>
-                    {w.brand && <div style={{ fontSize:'12px', color:'#555', marginTop:'2px' }}>{w.brand}</div>}
+                  <div style={{ minWidth:0, flex:1 }}>
+                    <h2 style={{ fontSize:'16px', fontWeight:600, margin:0, letterSpacing:'-0.02em', lineHeight:1.3, overflowWrap:'anywhere' }}>{w.productName}</h2>
+                    <div style={{ display:'flex', alignItems:'center', flexWrap:'wrap', gap:'8px', marginTop:'6px' }}>
+                      <div style={{ display:'inline-flex', alignItems:'center', gap:'5px', background:sBg, border:`1px solid ${sColor}22`, borderRadius:'20px', padding:'3px 10px', whiteSpace:'nowrap' }}>
+                        <div style={{ width:6, height:6, flexShrink:0, borderRadius:'50%', background:sColor }}></div>
+                        <span style={{ fontSize:'11px', fontWeight:600, color:sColor, lineHeight:1.4, textTransform:'capitalize' }}>{status}</span>
+                      </div>
+                      {w.brand && <span style={{ fontSize:'12px', color:'#555' }}>{w.brand}</span>}
+                    </div>
                   </div>
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:'5px', background:sBg, border:`1px solid ${sColor}22`, borderRadius:'20px', padding:'4px 10px' }}>
-                    <div style={{ width:6, height:6, borderRadius:'50%', background:sColor }}></div>
-                    <span style={{ fontSize:'11px', fontWeight:600, color:sColor }}>{status}</span>
-                  </div>
-                  <button onClick={() => setShowViewModal(false)} style={{ background:'none', border:'1px solid #1e1e1e', borderRadius:'8px', color:'#555', cursor:'pointer', padding:'8px', lineHeight:0 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </button>
-                </div>
+                <button aria-label="Close" onClick={() => setShowViewModal(false)} style={{ flexShrink:0, width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'1px solid #1e1e1e', borderRadius:'8px', color:'#555', cursor:'pointer', padding:0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'16px' }}>
                 {[
